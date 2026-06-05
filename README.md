@@ -5,7 +5,7 @@
 [![Live demo](https://img.shields.io/badge/demo-landscape.bairui.dev-141414?style=for-the-badge)](https://landscape.bairui.dev/)
 [![ITP Winter Show 2025](https://img.shields.io/badge/ITP-Winter%20Show%202025-f6f6f6?style=for-the-badge&color=141414)](https://bairui.dev/mountains-trees-names-inf)
 
-<img src="./img.png" width="720" alt="{Mountains, Trees, Names}* — infinite procedural landscape" />
+<img src="./img/landscape.png" width="720" alt="{Mountains, Trees, Names}* — infinite procedural landscape" />
 
 [\{Mountains, Trees, Names\}\*](https://landscape.bairui.dev/) is a procedurally generated infinite landscape collectively created from the trees of [Find the Tree in Your Name](https://tree.bairui.dev/) participants at [ITP Spring 2025](https://itp.nyu.edu/shows/spring2025/projects/#11830-find-the-tree-in-your-name). Zoom and pan across layered mountains; each tree is a name turned into form, signed with an [APack](https://apack.bairui.dev/) stamp.
 
@@ -33,19 +33,19 @@ The landscape itself evolved in stages:
 
 **Thanksgiving 2024 — triangles.** I wrote a `triangle(x)` function that places a triangle at each position using uniform and noise randomness, then repeats with a small offset until the range `[startX, endX]` fills up.
 
-![Early triangle landscape](./img-triangles.png)
+![Early triangle landscape](./img/triangles.png)
 
 **Half a year later — color.** In Daniel Shiffman's *The Nature of Code* at ITP, I moved the scene to SVG and added `radialGradient` fills, borrowing the palette from Wang Ximeng's painting.
 
-![Landscape with colored triangles](./img-color.png)
+![Landscape with colored triangles](./img/color.png)
 
 **Thanksgiving 2025 — trees and mountains.** I planted every participant tree into the scene with APack stamps and swapped triangles for midpoint-displacement mountains — more like shanshui, still infinite. The stamps made authorship visible: every person who grew a tree left a mark in the landscape.
 
-![Landscape with trees, names, and stamps](./img-trees-stamps.png)
+![Landscape with trees, names, and stamps](./img/trees-stamps.png)
 
 **ITP Winter Show 2025 — Riso prints.** [Chloe](https://www.instagram.com/qiyun_chloe/) had just taken Print and Code and wanted to experiment with a [Riso](https://us.riso.com/) printer — so we printed the landscape as 60 pages of A4 paper, from 10pm to 6am. With only a few ink colors available, we picked blue for mountains, orange for trees, and green for stamps. Each page needed four copies and three passes through the printer. We tiled the pages on the wall at ITP Winter Show 2025, making the digital forest tangible.
 
-![Landscape Riso print at ITP Winter Show 2025](./img-riso.jpg)
+![Landscape Riso print at ITP Winter Show 2025](./img/riso.jpg)
 
 ## How it works
 
@@ -111,13 +111,15 @@ Append `?show=true` for fullscreen kiosk mode (hides footer links, adds a fullsc
 
 ```
 infinite-landscape/
-├── render.js       # Mountains, trees, zoom, lazy loading
-├── tree.js         # Name → tree SVG (Charming.js)
-├── gradient.js     # Radial gradient helpers
-├── noise.js        # Perlin noise for terrain
-├── theme.js        # Sky and mountain palette
-├── names.json      # ITP Spring Show participant names
-├── main.js         # Mount, resize, kiosk mode
+├── src/
+│   ├── render.js   # Mountains, trees, zoom, lazy loading
+│   ├── tree.js     # Name → tree SVG (Charming.js)
+│   ├── gradient.js # Radial gradient helpers
+│   ├── noise.js    # Perlin noise for terrain
+│   ├── theme.js    # Sky and mountain palette
+│   ├── names.json  # ITP Spring Show participant names
+│   └── main.js     # Mount, resize, kiosk mode
+├── img/            # Screenshots and documentation images
 └── index.html
 ```
 
