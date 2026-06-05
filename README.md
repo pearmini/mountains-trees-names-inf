@@ -3,7 +3,7 @@
 **Pan forever. Find the tree you planted.**
 
 [![Live demo](https://img.shields.io/badge/demo-landscape.bairui.dev-141414?style=for-the-badge)](https://landscape.bairui.dev/)
-[![ITP Spring Show 2025](https://img.shields.io/badge/ITP-Spring%20Show%202025-f6f6f6?style=for-the-badge&color=141414)](https://bairui.dev/name2tree)
+[![ITP Winter Show 2025](https://img.shields.io/badge/ITP-Winter%20Show%202025-f6f6f6?style=for-the-badge&color=141414)](https://bairui.dev/mountains-trees-names-inf)
 
 <img src="./img.png" width="720" alt="{Mountains, Trees, Names}* — infinite procedural landscape" />
 
