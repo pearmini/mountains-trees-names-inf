@@ -29,7 +29,7 @@ This project grew out of [Find Trees in Names: What if We are Trees?](https://ba
 
 I was first drawn to Lingdong Huang's [\{Shan, Shui\}\*](https://shan-shui-inf.lingdong.works/) for its overall composition — mountains and rivers connected across a long-distance view, perfect for zooming and panning. A few years later, a musical theatre performance called [A Tapestry of a Legendary Land](https://en.wikipedia.org/wiki/Wang_Ximeng) about Wang Ximeng painting [A Thousand Li of Rivers and Mountains](https://en.wikipedia.org/wiki/Wang_Ximeng) stayed with me. I kept wanting to work with those yellow, blue, and green colors.
 
-The landscape itself evolved in three passes:
+The landscape itself evolved in stages:
 
 **Thanksgiving 2024 — triangles.** I wrote a `triangle(x)` function that places a triangle at each position using uniform and noise randomness, then repeats with a small offset until the range `[startX, endX]` fills up.
 
@@ -42,6 +42,10 @@ The landscape itself evolved in three passes:
 **Thanksgiving 2025 — trees and mountains.** I planted every participant tree into the scene with APack stamps and swapped triangles for midpoint-displacement mountains — more like shanshui, still infinite. The stamps made authorship visible: every person who grew a tree left a mark in the landscape.
 
 ![Landscape with trees, names, and stamps](./img.png)
+
+**ITP Winter Show 2025 — Riso prints.** [Chloe](https://www.instagram.com/qiyun_chloe/) had just taken Print and Code and wanted to experiment with a [Riso](https://us.riso.com/) printer — so we printed the landscape as 60 pages of A4 paper, from 10pm to 6am. With only a few ink colors available, we picked blue for mountains, orange for trees, and green for stamps. Each page needed four copies and three passes through the printer. We tiled the pages on the wall at ITP Winter Show 2025, making the digital forest tangible.
+
+![Landscape Riso print at ITP Winter Show 2025](./img-riso.jpg)
 
 ## How it works
 
