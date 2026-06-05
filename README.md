@@ -23,8 +23,6 @@ Inspired by Lingdong Huang's [\{Shan, Shui\}\*](https://github.com/LingDong-/sha
 4. **Explore** — D3 zoom and pan reveal an endless scroll; new terrain loads as you move.
 5. **Present** — At ITP Winter Show 2025, [Chloe](https://www.instagram.com/qiyun_chloe/) and I printed 60 pages on a [Riso](https://us.riso.com/) printer and tiled them on the wall, making the digital forest tangible.
 
-![Landscape with colored triangles — early exploration](./img-color.png)
-
 ## Why it exists
 
 This project grew out of [Find Trees in Names: What if We are Trees?](https://bairui.dev/name2tree). After collecting hundreds of trees from the ITP Spring Show, I wanted to see them not as a grid or a cloud, but as a **forest in a landscape** — the way names hide inside language, the way cypress hides inside `柏`.
@@ -39,7 +37,11 @@ The landscape itself evolved in three passes:
 
 **Half a year later — color.** In Daniel Shiffman's *The Nature of Code* at ITP, I moved the scene to SVG and added `radialGradient` fills, borrowing the palette from Wang Ximeng's painting.
 
+![Landscape with colored triangles](./img-color.png)
+
 **Thanksgiving 2025 — trees and mountains.** I planted every participant tree into the scene with APack stamps and swapped triangles for midpoint-displacement mountains — more like shanshui, still infinite. The stamps made authorship visible: every person who grew a tree left a mark in the landscape.
+
+![Landscape with trees, names, and stamps](./img.png)
 
 ## How it works
 
