@@ -29,9 +29,17 @@ Inspired by Lingdong Huang's [\{Shan, Shui\}\*](https://github.com/LingDong-/sha
 
 This project grew out of [Find Trees in Names: What if We are Trees?](https://bairui.dev/name2tree). After collecting hundreds of trees from the ITP Spring Show, I wanted to see them not as a grid or a cloud, but as a **forest in a landscape** — the way names hide inside language, the way cypress hides inside `柏`.
 
-Thanksgiving 2024, I started with triangles. Half a year later, I added the yellow-blue-green palette from Wang Ximeng's painting. Thanksgiving 2025, I planted the trees and replaced triangles with mountains. The stamps from APack made authorship visible: every participant left a mark in the scene.
+I was first drawn to Lingdong Huang's [\{Shan, Shui\}\*](https://shan-shui-inf.lingdong.works/) for its overall composition — mountains and rivers connected across a long-distance view, perfect for zooming and panning. A few years later, a musical theatre performance called [A Tapestry of a Legendary Land](https://en.wikipedia.org/wiki/Wang_Ximeng) about Wang Ximeng painting [A Thousand Li of Rivers and Mountains](https://en.wikipedia.org/wiki/Wang_Ximeng) stayed with me. I kept wanting to work with those yellow, blue, and green colors.
+
+The landscape itself evolved in three passes:
+
+**Thanksgiving 2024 — triangles.** I wrote a `triangle(x)` function that places a triangle at each position using uniform and noise randomness, then repeats with a small offset until the range `[startX, endX]` fills up.
 
 ![Early triangle landscape](./img-triangles.png)
+
+**Half a year later — color.** In Daniel Shiffman's *The Nature of Code* at ITP, I moved the scene to SVG and added `radialGradient` fills, borrowing the palette from Wang Ximeng's painting.
+
+**Thanksgiving 2025 — trees and mountains.** I planted every participant tree into the scene with APack stamps and swapped triangles for midpoint-displacement mountains — more like shanshui, still infinite. The stamps made authorship visible: every person who grew a tree left a mark in the landscape.
 
 ## How it works
 
