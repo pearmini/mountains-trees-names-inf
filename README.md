@@ -41,7 +41,7 @@ The landscape itself evolved in stages:
 
 **Thanksgiving 2025 — trees and mountains.** I planted every participant tree into the scene with APack stamps and swapped triangles for midpoint-displacement mountains — more like shanshui, still infinite. The stamps made authorship visible: every person who grew a tree left a mark in the landscape.
 
-![Landscape with trees, names, and stamps](./img.png)
+![Landscape with trees, names, and stamps](./img-trees-stamps.png)
 
 **ITP Winter Show 2025 — Riso prints.** [Chloe](https://www.instagram.com/qiyun_chloe/) had just taken Print and Code and wanted to experiment with a [Riso](https://us.riso.com/) printer — so we printed the landscape as 60 pages of A4 paper, from 10pm to 6am. With only a few ink colors available, we picked blue for mountains, orange for trees, and green for stamps. Each page needed four copies and three passes through the printer. We tiled the pages on the wall at ITP Winter Show 2025, making the digital forest tangible.
 
