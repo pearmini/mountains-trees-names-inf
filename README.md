@@ -1,11 +1,11 @@
-# {Mountains, Trees}\*
+# {Mountains, Trees, Names}\*
 
 **Pan forever. Find the tree you planted.**
 
 [![Live demo](https://img.shields.io/badge/demo-landscape.bairui.dev-141414?style=for-the-badge)](https://landscape.bairui.dev/)
 [![ITP Spring Show 2025](https://img.shields.io/badge/ITP-Spring%20Show%202025-f6f6f6?style=for-the-badge&color=141414)](https://bairui.dev/name2tree)
 
-<img src="./img.png" width="720" alt="{Mountains, Trees}* — infinite procedural landscape" />
+<img src="./img.png" width="720" alt="{Mountains, Trees, Names}* — infinite procedural landscape" />
 
 [\{Mountains, Trees, Names\}\*](https://landscape.bairui.dev/) is a procedurally generated infinite landscape collectively created from the trees of [Find the Tree in Your Name](https://tree.bairui.dev/) participants at [ITP Spring 2025](https://itp.nyu.edu/shows/spring2025/projects/#11830-find-the-tree-in-your-name). Zoom and pan across layered mountains; each tree is a name turned into form, signed with an [APack](https://apack.bairui.dev/) stamp.
 
