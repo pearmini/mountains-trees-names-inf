@@ -1,8 +1,12 @@
 import {render} from "./render.js";
+import {inject} from "@vercel/analytics";
 
 // Check if URL param 'show' is true
 const urlParams = new URLSearchParams(window.location.search);
 const showFullscreenButton = urlParams.get("show") === "true";
+
+// Initialize Vercel Analytics
+inject();
 
 let currentNode = null;
 let currentSeed = process.env.NODE_ENV === "development" ? 10000 : Date.now();
