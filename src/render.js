@@ -296,7 +296,7 @@ function placeMergedTrees({userTrees, startX, endX, seed, height, mountains, cen
 
 export function render({
   width = 1000,
-  height = 600,
+  height = 540,
   currentX = 0,
   startX = currentX - width,
   endX = currentX + width * 2,
