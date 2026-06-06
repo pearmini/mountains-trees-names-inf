@@ -21,7 +21,7 @@ Inspired by Lingdong Huang's [\{Shan, Shui\}\*](https://github.com/LingDong-/sha
 2. **Plant** — Community trees and the ITP archive in `names.json` merge into one list (community newest first). Index 0 sits at the screen center; higher indices alternate right, left, further right, further left, with stable seeded gaps. Pan forever — the list loops along the ridge.
 3. **Sign** — APack stamps mark authorship on each tree, visible marks of who grew what.
 4. **Explore** — D3 zoom and pan reveal an endless scroll; new terrain loads as you move.
-5. **Return** — Open **My trees** to see and delete trees you planted (shared browser ID with [tree.bairui.dev](https://tree.bairui.dev/)).
+5. **Return** — Open **My trees** to browse, focus, or delete trees you planted (shared browser ID with [tree.bairui.dev](https://tree.bairui.dev/)). A live count shows how many trees are in the landscape.
 6. **Present** — At ITP Winter Show 2025, [Chloe](https://www.instagram.com/qiyun_chloe/) and I printed 60 pages on a [Riso](https://us.riso.com/) printer and tiled them on the wall, making the digital forest tangible.
 
 ## Why it exists
@@ -103,7 +103,7 @@ cp .env.example .env.local   # optional: enable planting via Supabase
 pnpm dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Scroll and zoom to explore. Without `.env.local`, the landscape loads; planting shows a friendly “not connected” message.
+Open [http://localhost:5173](http://localhost:5173). Scroll and zoom to explore. Without `.env.local`, the landscape loads; planting shows a friendly “not connected” message. The **?** button in modals walks through how a name becomes a tree.
 
 ```bash
 pnpm build     # production build
@@ -126,7 +126,9 @@ infinite-landscape/
 ├── src/
 │   ├── render.js   # Mountains, trees, zoom, lazy loading
 │   ├── tree.js     # Name → tree SVG (Charming.js)
-│   ├── ui.js       # Plant / My trees modals
+│   ├── ui.js           # Plant / My trees modals
+│   ├── howItWorks.js   # Step-by-step name → tree guide
+│   ├── animateTree.js  # Grow animation when planting
 │   ├── gradient.js # Radial gradient helpers
 │   ├── noise.js    # Perlin noise for terrain
 │   ├── theme.js    # Sky and mountain palette
