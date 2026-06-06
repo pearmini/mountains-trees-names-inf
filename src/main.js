@@ -8,7 +8,11 @@ import {
 import {inject} from "@vercel/analytics";
 
 const urlParams = new URLSearchParams(window.location.search);
-const showFullscreenButton = urlParams.get("show") === "true";
+const showMode = urlParams.get("show") === "true";
+
+if (showMode) {
+  document.body.classList.add("show-mode");
+}
 
 inject();
 
@@ -86,6 +90,7 @@ async function bootstrap() {
   createAndRender();
 
   ({setInteractionBlocked, updateTreeCounts} = initUI({
+    showMode,
     getUserTrees: () => userTrees,
     refreshUserTrees,
     onRegenerateLandscape: regenerateLandscape,
@@ -122,68 +127,13 @@ async function bootstrap() {
 
 bootstrap();
 
-if (showFullscreenButton) {
+if (showMode) {
   const contentDiv = document.querySelector(".content");
   const links = contentDiv.querySelectorAll("a");
   links.forEach((link) => {
     const text = link.textContent;
     link.replaceWith(document.createTextNode(text));
   });
-}
-
-if (showFullscreenButton) {
-  const fullscreenButton = document.createElement("button");
-  fullscreenButton.textContent = "⛶ Fullscreen";
-  fullscreenButton.style.cssText = `
-    position: fixed;
-    top: 16px;
-    right: 60px;
-    z-index: 1000;
-    padding: 10px 20px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: "IBM Plex Mono", monospace;
-    transition: background 0.2s;
-  `;
-  fullscreenButton.addEventListener("mouseenter", () => {
-    fullscreenButton.style.background = "rgba(0, 0, 0, 0.9)";
-  });
-  fullscreenButton.addEventListener("mouseleave", () => {
-    fullscreenButton.style.background = "rgba(0, 0, 0, 0.7)";
-  });
-
-  fullscreenButton.addEventListener("click", async () => {
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
-    } catch (error) {
-      console.error("Fullscreen error:", error);
-    }
-  });
-
-  document.body.appendChild(fullscreenButton);
-
-  function updateButtonVisibility() {
-    const isFullscreen = !!(
-      document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
-    );
-    fullscreenButton.style.display = isFullscreen ? "none" : "block";
-  }
-
-  document.addEventListener("fullscreenchange", updateButtonVisibility);
-  document.addEventListener("webkitfullscreenchange", updateButtonVisibility);
-  document.addEventListener("mozfullscreenchange", updateButtonVisibility);
-  document.addEventListener("MSFullscreenChange", updateButtonVisibility);
 }
 
 function handleResize() {

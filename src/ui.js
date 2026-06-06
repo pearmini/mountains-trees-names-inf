@@ -149,6 +149,7 @@ function createTreeActions({onFocus, onDelete}) {
 }
 
 export function initUI({
+  showMode = false,
   onAdd,
   onDelete,
   onFocusTree,
@@ -159,10 +160,22 @@ export function initUI({
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
 
+  const plantWrap = document.createElement("div");
+  plantWrap.className = "toolbar-plant-wrap";
+
   const plantButton = document.createElement("button");
   plantButton.type = "button";
   plantButton.className = "toolbar-btn toolbar-btn-primary";
   plantButton.textContent = "+ Plant";
+
+  if (showMode) {
+    const plantHint = document.createElement("p");
+    plantHint.className = "toolbar-plant-hint";
+    plantHint.textContent = "Tap to plant your name as a tree";
+    plantWrap.append(plantHint, plantButton);
+  } else {
+    plantWrap.appendChild(plantButton);
+  }
 
   const remixWrap = document.createElement("div");
   remixWrap.className = "toolbar-item-with-tooltip";
@@ -187,7 +200,7 @@ export function initUI({
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  toolbar.append(plantButton, remixWrap, myTreesButton);
+  toolbar.append(plantWrap, remixWrap, myTreesButton);
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");

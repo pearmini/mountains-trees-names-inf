@@ -205,6 +205,227 @@
       background: var(--panel);
     }
 
+    .toolbar-plant-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .show-mode-header {
+      display: none;
+    }
+
+    body.show-mode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    body.show-mode .content,
+    body.show-mode .github-link {
+      display: none;
+    }
+
+    body.show-mode #container {
+      height: auto;
+      flex: 0 0 auto;
+      width: 100%;
+    }
+
+    body.show-mode .show-mode-header {
+      display: block;
+      position: static;
+      transform: none;
+      flex: 0 0 auto;
+      margin: 0 0 48px;
+      text-align: center;
+      max-width: min(640px, calc(100vw - 40px));
+      padding: 20px 32px;
+      border-radius: 14px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.9);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+
+    .show-mode-title {
+      font-family: var(--font-serif);
+      font-size: 26px;
+      font-weight: 500;
+      margin: 0 0 10px;
+      letter-spacing: 0.01em;
+    }
+
+    .show-mode-desc {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      line-height: 1.5;
+      margin: 0 0 12px;
+      opacity: 0.88;
+    }
+
+    .show-mode-interaction {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      margin: 0;
+      opacity: 0.72;
+      letter-spacing: 0.02em;
+    }
+
+    body.show-mode .toolbar {
+      position: static;
+      transform: none;
+      flex: 0 0 auto;
+      margin: 10px 0 0;
+      gap: 14px;
+      align-items: flex-end;
+      flex-wrap: nowrap;
+      padding: 0;
+      box-sizing: border-box;
+      max-width: 100%;
+      width: max-content;
+    }
+
+    body.show-mode .toolbar-plant-hint {
+      position: relative;
+      font-family: var(--font-serif);
+      font-size: 14px;
+      font-weight: 500;
+      margin: 0 0 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.94);
+      color: var(--ink);
+      white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(4px);
+      animation: show-mode-hint-bob 2.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    body.show-mode .toolbar-plant-hint::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -7px;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: rgba(254, 250, 241, 0.94);
+      border-right: 1.5px solid var(--ink);
+      border-bottom: 1.5px solid var(--ink);
+    }
+
+    body.show-mode .toolbar-plant-wrap {
+      position: relative;
+    }
+
+    body.show-mode .toolbar-btn {
+      font-size: 18px;
+      padding: 14px 28px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.15s ease,
+        color 0.15s ease;
+    }
+
+    body.show-mode .toolbar-btn:hover:not(:disabled) {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+    }
+
+    body.show-mode .toolbar-btn:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    }
+
+    body.show-mode .toolbar-btn-primary {
+      animation: show-mode-plant-pulse 2.4s ease-in-out infinite;
+    }
+
+    body.show-mode .toolbar-btn-primary:hover:not(:disabled) {
+      animation: none;
+    }
+
+    body.show-mode .toolbar-tooltip {
+      top: auto;
+      bottom: calc(100% + 10px);
+    }
+
+    @keyframes show-mode-plant-pulse {
+      0%,
+      100% {
+        box-shadow:
+          0 4px 16px rgba(0, 0, 0, 0.14),
+          0 0 0 0 rgba(26, 26, 26, 0.35);
+      }
+      50% {
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.2),
+          0 0 0 10px rgba(26, 26, 26, 0);
+      }
+    }
+
+    @keyframes show-mode-hint-bob {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-4px);
+      }
+    }
+
+    @media (max-width: 640px) {
+      body.show-mode {
+        padding: 12px;
+      }
+
+      body.show-mode .show-mode-header {
+        margin-bottom: 32px;
+        padding: 16px 20px;
+      }
+
+      .show-mode-title {
+        font-size: 22px;
+      }
+
+      .show-mode-desc {
+        font-size: 15px;
+      }
+
+      .show-mode-interaction {
+        font-size: 12px;
+      }
+
+      body.show-mode .toolbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 8px;
+        gap: 10px;
+      }
+
+      body.show-mode .toolbar-plant-hint {
+        font-size: 12px;
+        white-space: normal;
+        text-align: center;
+        max-width: 220px;
+      }
+
+      body.show-mode .toolbar-btn {
+        font-size: 16px;
+        padding: 12px 22px;
+      }
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -650,6 +871,13 @@
         <a href="https://tree.bairui.dev" target="_blank" rel="noopener noreferrer">tree</a>.
       </p>
     </div>
+    <header class="show-mode-header">
+      <h1 class="show-mode-title">{Mountains, Trees, Names}*</h1>
+      <p class="show-mode-desc">
+        An infinite procedural landscape. Every name becomes a tree.
+      </p>
+      <p class="show-mode-interaction">Drag to pan · Scroll or pinch to zoom</p>
+    </header>
     <div id="container"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
