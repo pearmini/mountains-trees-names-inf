@@ -12,7 +12,7 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.0",
+    "@supabase/supabase-js": "^2.107.0",
     "@vercel/analytics": "^2.0.1",
     "apackjs": "0.0.1",
     "bad-words": "^4.0.0",
