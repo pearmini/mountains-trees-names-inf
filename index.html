@@ -4,12 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{Mountains, Trees, Names}*</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <style>
+    :root {
+      --font-serif: "Newsreader", Georgia, serif;
+      --font-mono: "IBM Plex Mono", monospace;
+      --ink: #1a1a1a;
+      --paper: #f6d87b;
+      --panel: #fefaf1;
+      --error: #a33;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
+      font-family: var(--font-serif);
+      color: var(--ink);
       overflow: hidden;
     }
 
@@ -26,35 +42,320 @@
       align-items: flex-end;
       position: absolute;
       bottom: 20px;
-      right: 10px;
+      right: 16px;
       z-index: 100;
+      max-width: 320px;
+      text-align: right;
     }
 
     .title {
-      font-size: 16px;
-      margin: 0 0 10px 0;
+      font-family: var(--font-serif);
+      font-size: 17px;
+      font-weight: 500;
+      margin: 0 0 8px 0;
+      letter-spacing: 0.01em;
     }
 
     .description {
-      font-size: 12px;
+      font-family: var(--font-serif);
+      font-size: 13px;
+      line-height: 1.45;
       margin: 0;
+      opacity: 0.85;
     }
 
     .content a {
       color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    .github-link {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.92);
+      color: var(--ink);
+      backdrop-filter: blur(4px);
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .github-link:hover {
+      background: var(--panel);
+    }
+
+    .github-link:active {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .github-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 200;
+      display: flex;
+      gap: 8px;
+    }
+
+    .toolbar-btn {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .toolbar-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .toolbar-btn-primary {
+      background: var(--ink);
+      color: var(--panel);
+      border: 1.5px solid var(--ink);
+    }
+
+    .toolbar-btn-primary:hover:not(:disabled) {
+      background: #333;
+    }
+
+    .toolbar-btn-secondary {
+      background: rgba(254, 250, 241, 0.92);
+      color: var(--ink);
+      border: 1.5px solid var(--ink);
+      backdrop-filter: blur(4px);
+    }
+
+    .toolbar-btn-secondary:hover:not(:disabled) {
+      background: var(--panel);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-dialog {
+      width: min(480px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1.5px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 0;
+    }
+
+    .modal-title {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .modal-close {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      line-height: 1;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--ink);
+      padding: 0 4px;
+    }
+
+    .modal-body {
+      padding: 16px 18px 20px;
+    }
+
+    .modal-preview {
+      width: 100%;
+      aspect-ratio: 1;
+      margin-bottom: 14px;
+      background: var(--paper);
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .modal-input {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+
+    .modal-input:focus {
+      outline: 2px solid var(--paper);
+      outline-offset: 1px;
+    }
+
+    .modal-error {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--error);
+      margin: 0 0 12px;
+    }
+
+    .modal-message {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0 18px 20px;
+      color: #333;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .my-trees-body {
+      padding-top: 8px;
+    }
+
+    .my-trees-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .my-tree-cell {
+      position: relative;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .my-tree-thumb {
+      width: 100%;
+      aspect-ratio: 1;
+    }
+
+    .my-tree-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin: 0;
+      padding: 6px 8px;
+      background: var(--panel);
+      border-top: 1px solid rgba(26, 26, 26, 0.15);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .my-tree-delete {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: none;
+      transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+    }
+
+    .my-tree-dot {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 1;
+      color: var(--ink);
+    }
+
+    .my-tree-trash {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+    }
+
+    .my-tree-cell:hover .my-tree-delete {
+      width: 26px;
+      height: 26px;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      background: var(--panel);
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .my-tree-cell:hover .my-tree-dot {
+      display: none;
+    }
+
+    .my-tree-cell:hover .my-tree-trash {
+      display: flex;
+    }
+
+    .my-tree-delete:active {
+      background: var(--ink);
+      color: var(--panel);
     }
   </style>
   <body>
+    <a
+      class="github-link"
+      href="https://github.com/pearmini/infinite-landscape"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub repository"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
+        />
+      </svg>
+    </a>
     <div class="content">
-      <h1 class="title">
-        <a href="https://github.com/pearmini/infinite-landscape" target="_blank">{Mountains, Trees, Names}*</a>
-      </h1>
+      <h1 class="title">{Mountains, Trees, Names}*</h1>
       <p class="description">
-        A Procedurally Generated Infinite Landscape by
-        <a href="https://tree.bairui.dev" target="_blank">Find the Tree in Your Name</a> Participants in
-        <a href="https://itp.nyu.edu/shows/spring2025/projects/#11830-find-the-tree-in-your-name" target="_blank"
-          >ITP Spring 2025</a
-        >.
+        Pan and zoom a procedurally generated infinite landscape. Every name becomes a tree —
+        <a href="https://tree.bairui.dev" target="_blank">plant yours</a>.
       </p>
     </div>
     <div id="container"></div>

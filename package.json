@@ -11,7 +11,9 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
     "apackjs": "0.0.1",
+    "bad-words": "^4.0.0",
     "charmingjs": "0.0.17",
     "d3": "^7.9.0",
     "gl-matrix": "^3.4.4"

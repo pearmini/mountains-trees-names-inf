@@ -165,36 +165,92 @@ function findYOnMountain(x, mountains) {
   return null;
 }
 
-function generateTrees({startX, endX, seed, height, mountains}) {
-  const spacing = 350;
+const TREE_SPACING = 350;
+const TREE_DY = 40;
+const TREE_MIN_Y = 420;
+const TREE_MAX_Y = 640;
+
+function createTreeScaler() {
+  return d3.scaleSqrt().domain([TREE_MIN_Y, TREE_MAX_Y]).range([200, 400]);
+}
+
+function placeTreeOnMountain({x, name, id, height, mountains, scaleWidth, source = "archive", dbId, browserId}) {
+  const y = findYOnMountain(x, mountains);
+  if (y === null || y < 0) return null;
+  const py = Math.min(height - 20, y + TREE_DY);
+  return {
+    x,
+    y: py,
+    width: scaleWidth(py),
+    name,
+    id,
+    source,
+    dbId,
+    browserId,
+  };
+}
+
+function placeCommunityTrees({userTrees, height, mountains}) {
+  const scaleWidth = createTreeScaler();
+  const sorted = [...userTrees].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return sorted
+    .map((entry, index) =>
+      placeTreeOnMountain({
+        x: -index * TREE_SPACING,
+        name: entry.name,
+        id: `user-${entry.id}`,
+        height,
+        mountains,
+        scaleWidth,
+        source: "community",
+        dbId: entry.id,
+        browserId: entry.browserId,
+      }),
+    )
+    .filter(Boolean);
+}
+
+function isNearCommunityTree(px, communityXs, threshold = TREE_SPACING / 2) {
+  return communityXs.some((cx) => Math.abs(px - cx) < threshold);
+}
+
+function generateTrees({startX, endX, seed, height, mountains, communityXs = []}) {
   const trees = [];
   const randomName = (x) => random(x * 1000) * namesData.length;
   const noiseSpacing = randomNoise(0, 1.2, {seed, octaves: 1, falloff: 0.5});
-
-  const dy = 40;
-
-  // Fixed Y range for trees for consistent y position.
-  const minY = 420;
-  const maxY = 640;
-  const scaleWidth = d3.scaleSqrt().domain([minY, maxY]).range([200, 400]);
+  const scaleWidth = createTreeScaler();
 
   function addTree(x) {
-    const px = x + spacing * noiseSpacing(x);
-    const y = findYOnMountain(px, mountains);
-    if (y !== null && y >= 0) {
-      const nameIndex = Math.floor(randomName(x));
-      const name = namesData[nameIndex].name;
-      const py = Math.min(height - 20, y + dy);
-      const treeWidth = scaleWidth(py);
-      trees.push({x: px, y: py, width: treeWidth, name, id: `tree-${Math.floor(px / 100)}-${nameIndex}`});
-    }
+    const px = x + TREE_SPACING * noiseSpacing(x);
+    if (isNearCommunityTree(px, communityXs)) return;
+    const nameIndex = Math.floor(randomName(x));
+    const placed = placeTreeOnMountain({
+      x: px,
+      name: namesData[nameIndex].name,
+      id: `tree-${Math.floor(px / 100)}-${nameIndex}`,
+      height,
+      mountains,
+      scaleWidth,
+      source: "archive",
+    });
+    if (placed) trees.push(placed);
   }
 
   let px;
-  for (px = 0; px < endX; px += spacing) addTree(px);
-  for (px = -spacing; px > startX; px -= spacing) addTree(px);
+  for (px = 0; px < endX; px += TREE_SPACING) addTree(px);
+  for (px = -TREE_SPACING; px > startX; px -= TREE_SPACING) addTree(px);
 
   return trees;
+}
+
+function mergeTrees({userTrees, startX, endX, seed, height, mountains}) {
+  const communityTrees = placeCommunityTrees({userTrees, height, mountains});
+  const communityXs = communityTrees.map((tree) => tree.x);
+  const archiveTrees = generateTrees({startX, endX, seed, height, mountains, communityXs});
+  return [...communityTrees, ...archiveTrees];
 }
 
 export function render({
@@ -206,8 +262,11 @@ export function render({
   translateX = 0,
   scaleX = 1,
   seed = 10000,
+  userTrees = [],
 } = {}) {
+  let communityTreesData = userTrees;
   const state = {startX, endX, translateX, scaleX, currentX, offsetX: 0, x0: 0};
+  let latestCommunityY = height * 0.75;
 
   const line = d3
     .line()
@@ -288,7 +347,17 @@ export function render({
 
     const mountains = [...farMountains, ...closeMountains];
 
-    const trees = generateTrees({startX, endX, seed, height, mountains: closeMountains});
+    const trees = mergeTrees({
+      userTrees: communityTreesData,
+      startX,
+      endX,
+      seed,
+      height,
+      mountains: closeMountains,
+    });
+
+    const newestCommunity = trees.find((tree) => tree.source === "community" && tree.x === 0);
+    if (newestCommunity) latestCommunityY = newestCommunity.y;
 
     const scaledHeight = height * scaleX;
 
@@ -347,5 +416,14 @@ export function render({
     treeGroups.exit().remove();
   }
 
-  return svg.node();
+  return {
+    node: svg.node(),
+    setUserTrees(trees) {
+      communityTreesData = trees;
+      update();
+    },
+    panToWorldX(x) {
+      zoomBehavior.translateTo(svg, width / 2, height / 2, [x, latestCommunityY]);
+    },
+  };
 }
