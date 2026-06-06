@@ -4,12 +4,26 @@ import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
 import {renderTreePngBlob} from "./lib/treeImageExport.js";
-import {isTreeImageUploadConfigured, uploadTreePng} from "./lib/treeImageUpload.js";
+import {uploadTreePng} from "./lib/treeImageUpload.js";
 import {validateName} from "./lib/validateName.js";
 import {createTreePrintQrModal} from "./treePrintQr.js";
 
-const PREVIEW_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
-const THUMB_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
+const PREVIEW_OPTIONS = {
+  grid: false,
+  padding: 0,
+  number: false,
+  line: false,
+  end: false,
+  stampCellSize: 80,
+};
+const THUMB_OPTIONS = {
+  grid: false,
+  padding: 0,
+  number: false,
+  line: false,
+  end: false,
+  stampCellSize: 80,
+};
 
 function renderTreePreview(container, name, options = PREVIEW_OPTIONS) {
   container.innerHTML = "";
@@ -252,14 +266,6 @@ export function initUI({
   }
 
   async function openTreePrintQr(name) {
-    if (!isTreeImageUploadConfigured()) {
-      openMessageModal(
-        "Not available",
-        "Take-home prints are not configured yet. Please ask the host for help.",
-      );
-      return;
-    }
-
     closePrintQrModal();
 
     const pngBlob = await renderTreePngBlob(name);
@@ -320,16 +326,15 @@ export function initUI({
     submit.className = "toolbar-btn toolbar-btn-primary";
     submit.textContent = "Plant your tree";
 
-    actions.appendChild(submit);
-
     let takeHomeButton = null;
     if (showMode) {
       takeHomeButton = document.createElement("button");
       takeHomeButton.type = "button";
       takeHomeButton.className = "toolbar-btn toolbar-btn-secondary";
       takeHomeButton.textContent = "Take home";
-      actions.insertBefore(takeHomeButton, submit);
     }
+
+    actions.append(submit, ...(takeHomeButton ? [takeHomeButton] : []));
     body.append(preview, input, privacy, error, actions);
     modal.dialog.appendChild(body);
     document.body.appendChild(modal.overlay);

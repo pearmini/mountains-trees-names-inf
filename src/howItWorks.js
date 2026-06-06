@@ -9,6 +9,7 @@ const TREE_PREVIEW_OPTIONS = {
   padding: 0,
   line: false,
   end: false,
+  stampCellSize: 80,
   width: 480,
   height: 480,
 };
