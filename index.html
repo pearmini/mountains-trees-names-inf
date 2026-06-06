@@ -221,7 +221,7 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      padding: 16px;
+      padding: 16px 0;
       box-sizing: border-box;
     }
 
@@ -234,6 +234,7 @@
       height: auto;
       flex: 0 0 auto;
       width: 100%;
+      align-self: stretch;
     }
 
     body.show-mode .show-mode-header {
@@ -409,7 +410,7 @@
 
     @media (max-width: 640px) {
       body.show-mode {
-        padding: 12px;
+        padding: 12px 0;
       }
 
       body.show-mode .show-mode-header {
