@@ -12,11 +12,36 @@ const showFullscreenButton = urlParams.get("show") === "true";
 
 inject();
 
+function parseSeedFromUrl() {
+  const seedParam = urlParams.get("seed");
+  if (seedParam != null && seedParam !== "" && Number.isFinite(Number(seedParam))) {
+    return Number(seedParam) >>> 0;
+  }
+  return null;
+}
+
+function syncSeedToUrl(seed) {
+  const params = new URLSearchParams(window.location.search);
+  params.set("seed", String(seed));
+  const query = params.toString();
+  history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+}
+
 let currentController = null;
 let userTrees = [];
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
-let currentSeed = process.env.NODE_ENV === "development" ? 10000 : Date.now();
+let currentSeed = parseSeedFromUrl();
+if (currentSeed == null) {
+  currentSeed = Date.now() >>> 0;
+  syncSeedToUrl(currentSeed);
+}
+
+function regenerateLandscape() {
+  currentSeed = Date.now() >>> 0;
+  syncSeedToUrl(currentSeed);
+  createAndRender({panToOrigin: true});
+}
 
 async function loadUserTrees() {
   try {
@@ -63,6 +88,7 @@ async function bootstrap() {
   ({setInteractionBlocked, updateTreeCounts} = initUI({
     getUserTrees: () => userTrees,
     refreshUserTrees,
+    onRegenerateLandscape: regenerateLandscape,
     onAdd: async (name) => {
       const added = await addLandscapeTree(name);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];

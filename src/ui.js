@@ -148,7 +148,14 @@ function createTreeActions({onFocus, onDelete}) {
   return actions;
 }
 
-export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserTrees}) {
+export function initUI({
+  onAdd,
+  onDelete,
+  onFocusTree,
+  onRegenerateLandscape,
+  getUserTrees,
+  refreshUserTrees,
+}) {
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
 
@@ -157,12 +164,30 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
   plantButton.className = "toolbar-btn toolbar-btn-primary";
   plantButton.textContent = "+ Plant";
 
+  const remixWrap = document.createElement("div");
+  remixWrap.className = "toolbar-item-with-tooltip";
+
+  const remixButton = document.createElement("button");
+  remixButton.type = "button";
+  remixButton.className = "toolbar-btn toolbar-btn-secondary";
+  remixButton.textContent = "Remix";
+
+  const remixTooltip = document.createElement("div");
+  remixTooltip.className = "toolbar-tooltip";
+  remixTooltip.id = "remix-tooltip";
+  remixTooltip.setAttribute("role", "tooltip");
+  remixTooltip.textContent =
+    "Generate a new random landscape. Mountains change; trees stay the same.";
+  remixButton.setAttribute("aria-describedby", remixTooltip.id);
+
+  remixWrap.append(remixButton, remixTooltip);
+
   const myTreesButton = document.createElement("button");
   myTreesButton.type = "button";
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  toolbar.append(plantButton, myTreesButton);
+  toolbar.append(plantButton, remixWrap, myTreesButton);
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -359,12 +384,14 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
   }
 
   plantButton.addEventListener("click", openAddModal);
+  remixButton.addEventListener("click", () => onRegenerateLandscape?.());
   myTreesButton.addEventListener("click", openMyTreesModal);
   updateTreeCounts();
 
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
     plantButton.disabled = blocked;
+    remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
   }
 
