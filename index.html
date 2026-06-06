@@ -489,8 +489,12 @@
       justify-content: flex-end;
     }
 
+    .modal-group:has(.modal-dialog-my-trees) {
+      width: min(960px, calc(100vw - 40px));
+    }
+
     .modal-dialog-my-trees {
-      width: min(720px, 100%);
+      width: 100%;
     }
 
     .my-trees-body {
