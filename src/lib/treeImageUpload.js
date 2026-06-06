@@ -1,11 +1,5 @@
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+const LITTERBOX_UPLOAD = "https://litterbox.catbox.moe/resources/internals/api.php";
+const LITTERBOX_EXPIRY = "24h";
 
 function slugify(name) {
   return (
@@ -18,20 +12,24 @@ function slugify(name) {
 }
 
 export async function uploadTreePng(blob, name) {
-  const base64 = await blobToBase64(blob);
-  const response = await fetch("/api/upload-tree", {
+  const form = new FormData();
+  form.append("reqtype", "fileupload");
+  form.append("time", LITTERBOX_EXPIRY);
+  form.append("fileToUpload", blob, `${slugify(name)}-${Date.now()}.png`);
+
+  const response = await fetch(LITTERBOX_UPLOAD, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      image: base64,
-      name: slugify(name),
-    }),
+    body: form,
   });
 
-  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error ?? "Could not upload tree image.");
+    throw new Error(`Upload failed (${response.status})`);
   }
 
-  return payload.url;
+  const url = (await response.text()).trim();
+  if (!url.startsWith("http")) {
+    throw new Error("Unexpected response from upload service.");
+  }
+
+  return url;
 }
