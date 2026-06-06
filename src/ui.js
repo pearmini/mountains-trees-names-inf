@@ -223,6 +223,11 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
     });
     activeModal = modal;
 
+    const privacy = document.createElement("p");
+    privacy.className = "modal-privacy";
+    privacy.textContent =
+      "Your name will appear publicly in the landscape. It is stored only for this project and not used for anything else. You can delete your trees anytime in My trees.";
+
     const error = document.createElement("p");
     error.className = "modal-error";
     error.hidden = true;
@@ -236,7 +241,7 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
     submit.textContent = "Plant your tree";
 
     actions.appendChild(submit);
-    body.append(preview, input, error, actions);
+    body.append(preview, input, privacy, error, actions);
     modal.dialog.appendChild(body);
     document.body.appendChild(modal.overlay);
 
