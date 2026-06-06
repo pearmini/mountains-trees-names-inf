@@ -177,6 +177,11 @@
       box-sizing: border-box;
     }
 
+    .modal-group {
+      position: relative;
+      flex-shrink: 0;
+    }
+
     .modal-dialog {
       width: min(480px, 100%);
       max-height: 90vh;
@@ -185,12 +190,28 @@
       border: 1.5px solid var(--ink);
       border-radius: 8px;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      flex-shrink: 0;
+      scrollbar-gutter: stable;
+    }
+
+    .modal-help-dialog {
+      width: 360px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+
+    .modal-group-with-help .modal-help-dialog {
+      position: absolute;
+      left: calc(100% + 2px);
+      top: 0;
     }
 
     .modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       padding: 16px 18px 0;
     }
 
@@ -201,15 +222,203 @@
       margin: 0;
     }
 
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .modal-help,
     .modal-close {
       font-family: var(--font-mono);
-      font-size: 22px;
       line-height: 1;
       border: none;
       background: transparent;
       cursor: pointer;
       color: var(--ink);
       padding: 0 4px;
+    }
+
+    .modal-help {
+      font-size: 17px;
+      font-weight: 600;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-help:hover,
+    .modal-help[aria-pressed="true"] {
+      background: var(--paper);
+    }
+
+    .modal-close {
+      font-size: 22px;
+    }
+
+    .help-body {
+      padding-top: 10px;
+    }
+
+    .help-step-title {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      line-height: 1.45;
+      margin: 0 0 14px;
+      min-height: 4.35em;
+    }
+
+    .help-step-title a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    .help-visual {
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: var(--paper);
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      border-radius: 4px;
+      padding: 14px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .help-visual-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 0;
+    }
+
+    .help-ascii {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.8;
+      width: 100%;
+    }
+
+    .help-ascii p {
+      margin: 0;
+    }
+
+    .help-ascii-result {
+      margin-top: 8px !important;
+      padding-top: 8px;
+      border-top: 1px solid rgba(26, 26, 26, 0.12);
+    }
+
+    .help-char,
+    .help-code {
+      font-weight: 600;
+    }
+
+    .help-arrow {
+      margin: 0 8px;
+      opacity: 0.6;
+    }
+
+    .help-code-block {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: 0.04em;
+      height: 1.25em;
+      line-height: 1.25;
+      flex-shrink: 0;
+      width: 100%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .help-code-block:empty,
+    .help-code-block[aria-hidden="true"] {
+      visibility: hidden;
+    }
+
+    .help-tree-preview {
+      width: 220px;
+      height: 220px;
+      flex-shrink: 0;
+    }
+
+    .help-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .help-nav-btn {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--ink);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .help-nav-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .help-nav-btn:not(:disabled):hover {
+      background: var(--paper);
+    }
+
+    .help-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .help-dot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: 1.5px solid var(--ink);
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .help-dot-active {
+      background: var(--ink);
+    }
+
+    @media (max-width: 860px) {
+      .modal-group-with-help {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+      }
+
+      .modal-group-with-help .modal-help-dialog {
+        position: static;
+        width: 100%;
+      }
     }
 
     .modal-body {

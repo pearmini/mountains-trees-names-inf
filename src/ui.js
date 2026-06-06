@@ -1,5 +1,6 @@
 import {tree} from "./tree.js";
 import namesData from "./names.json";
+import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
 import {validateName} from "./lib/validateName.js";
@@ -21,16 +22,24 @@ function renderTreePreview(container, name, options = PREVIEW_OPTIONS) {
   container.appendChild(node);
 }
 
-function createModal({title, onClose}) {
+function createModal({title, onClose, getHelpSample}) {
+  let helpPanel = null;
+
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.addEventListener("click", (event) => {
     if (event.target === overlay) onClose();
   });
 
+  const group = document.createElement("div");
+  group.className = "modal-group";
+
   const dialog = document.createElement("div");
   dialog.className = "modal-dialog";
-  dialog.addEventListener("click", (event) => event.stopPropagation());
+  dialog.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeHelp();
+  });
 
   const header = document.createElement("div");
   header.className = "modal-header";
@@ -39,6 +48,16 @@ function createModal({title, onClose}) {
   heading.className = "modal-title";
   heading.textContent = title;
 
+  const headerActions = document.createElement("div");
+  headerActions.className = "modal-header-actions";
+
+  const helpButton = document.createElement("button");
+  helpButton.type = "button";
+  helpButton.className = "modal-help";
+  helpButton.setAttribute("aria-label", "How it works");
+  helpButton.setAttribute("aria-pressed", "false");
+  helpButton.textContent = "?";
+
   const closeButton = document.createElement("button");
   closeButton.type = "button";
   closeButton.className = "modal-close";
@@ -46,9 +65,36 @@ function createModal({title, onClose}) {
   closeButton.textContent = "×";
   closeButton.addEventListener("click", onClose);
 
-  header.append(heading, closeButton);
+  headerActions.append(helpButton, closeButton);
+  header.append(heading, headerActions);
   dialog.appendChild(header);
-  overlay.appendChild(dialog);
+  group.appendChild(dialog);
+  overlay.appendChild(group);
+
+  function closeHelp() {
+    if (!helpPanel) return;
+    helpPanel.remove();
+    helpPanel = null;
+    group.classList.remove("modal-group-with-help");
+    helpButton.setAttribute("aria-pressed", "false");
+  }
+
+  function openHelp() {
+    if (helpPanel) return;
+    helpPanel = createHowItWorksPanel({
+      getSample: getHelpSample ?? (() => "AB"),
+      onClose: closeHelp,
+    });
+    group.classList.add("modal-group-with-help");
+    group.appendChild(helpPanel);
+    helpButton.setAttribute("aria-pressed", "true");
+  }
+
+  helpButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (helpPanel) closeHelp();
+    else openHelp();
+  });
 
   const onKeyDown = (event) => {
     if (event.key === "Escape") onClose();
@@ -58,8 +104,10 @@ function createModal({title, onClose}) {
   return {
     overlay,
     dialog,
+    closeHelp,
     destroy() {
       document.removeEventListener("keydown", onKeyDown);
+      closeHelp();
       overlay.remove();
     },
   };
@@ -155,9 +203,6 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
       return;
     }
 
-    const modal = createModal({title: "Plant your tree", onClose: closeModal});
-    activeModal = modal;
-
     const body = document.createElement("div");
     body.className = "modal-body";
 
@@ -170,6 +215,13 @@ export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserT
     input.placeholder = "Type your name or a short phrase…";
     input.maxLength = 80;
     input.autocomplete = "off";
+
+    const modal = createModal({
+      title: "Plant your tree",
+      onClose: closeModal,
+      getHelpSample: () => input.value,
+    });
+    activeModal = modal;
 
     const error = document.createElement("p");
     error.className = "modal-error";
