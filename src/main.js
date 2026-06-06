@@ -1,34 +1,101 @@
 import {render} from "./render.js";
+import {initUI} from "./ui.js";
+import {
+  addLandscapeTree,
+  deleteLandscapeTree,
+  fetchLandscapeTrees,
+} from "./lib/landscapeTreesApi.js";
 import {inject} from "@vercel/analytics";
 
-// Check if URL param 'show' is true
 const urlParams = new URLSearchParams(window.location.search);
 const showFullscreenButton = urlParams.get("show") === "true";
 
-// Initialize Vercel Analytics
 inject();
 
-let currentNode = null;
+let currentController = null;
+let userTrees = [];
+let setInteractionBlocked = () => {};
+let updateTreeCounts = () => {};
 let currentSeed = process.env.NODE_ENV === "development" ? 10000 : Date.now();
 
-function createAndRender() {
-  const container = document.querySelector("#container");
-  if (currentNode) {
-    container.removeChild(currentNode);
+async function loadUserTrees() {
+  try {
+    userTrees = await fetchLandscapeTrees();
+  } catch (error) {
+    console.error("Failed to load community trees:", error);
+    userTrees = [];
   }
-
-  currentNode = render({
-    width: window.innerWidth,
-    seed: currentSeed,
-  });
-
-  container.appendChild(currentNode);
+  return userTrees;
 }
 
-// Initial render
-createAndRender();
+function createAndRender({panToOrigin = false} = {}) {
+  const container = document.querySelector("#container");
+  if (currentController?.node) {
+    container.removeChild(currentController.node);
+  }
 
-// Convert links to plain text in show mode
+  currentController = render({
+    width: window.innerWidth,
+    seed: currentSeed,
+    userTrees,
+  });
+
+  container.appendChild(currentController.node);
+
+  if (panToOrigin) {
+    requestAnimationFrame(() => currentController.panToCenter());
+  }
+}
+
+async function refreshUserTrees() {
+  await loadUserTrees();
+  if (currentController) {
+    currentController.setUserTrees(userTrees);
+  }
+  updateTreeCounts();
+  return userTrees;
+}
+
+async function bootstrap() {
+  await loadUserTrees();
+  createAndRender();
+
+  ({setInteractionBlocked, updateTreeCounts} = initUI({
+    getUserTrees: () => userTrees,
+    refreshUserTrees,
+    onAdd: async (name) => {
+      const added = await addLandscapeTree(name);
+      userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
+      updateTreeCounts();
+      if (currentController) {
+        setInteractionBlocked(true);
+        void currentController.setUserTreesAndGrow(userTrees, added.id).finally(() => {
+          setInteractionBlocked(false);
+        });
+      }
+    },
+    onDelete: async (id) => {
+      await deleteLandscapeTree(id);
+      userTrees = userTrees.filter((tree) => tree.id !== id);
+      updateTreeCounts();
+      if (currentController) {
+        currentController.setUserTrees(userTrees);
+      }
+    },
+    onFocusTree: async (id) => {
+      if (!currentController) return;
+      setInteractionBlocked(true);
+      try {
+        await currentController.panToTreeAnimated(id);
+      } finally {
+        setInteractionBlocked(false);
+      }
+    },
+  }));
+}
+
+bootstrap();
+
 if (showFullscreenButton) {
   const contentDiv = document.querySelector(".content");
   const links = contentDiv.querySelectorAll("a");
@@ -38,14 +105,13 @@ if (showFullscreenButton) {
   });
 }
 
-// Create fullscreen button if show param is true
 if (showFullscreenButton) {
   const fullscreenButton = document.createElement("button");
   fullscreenButton.textContent = "⛶ Fullscreen";
   fullscreenButton.style.cssText = `
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 16px;
+    right: 60px;
     z-index: 1000;
     padding: 10px 20px;
     background: rgba(0, 0, 0, 0.7);
@@ -54,6 +120,7 @@ if (showFullscreenButton) {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    font-family: "IBM Plex Mono", monospace;
     transition: background 0.2s;
   `;
   fullscreenButton.addEventListener("mouseenter", () => {
@@ -77,7 +144,6 @@ if (showFullscreenButton) {
 
   document.body.appendChild(fullscreenButton);
 
-  // Function to update button visibility based on fullscreen state
   function updateButtonVisibility() {
     const isFullscreen = !!(
       document.fullscreenElement ||
@@ -88,23 +154,18 @@ if (showFullscreenButton) {
     fullscreenButton.style.display = isFullscreen ? "none" : "block";
   }
 
-  // Listen for fullscreen changes to hide/show button
   document.addEventListener("fullscreenchange", updateButtonVisibility);
   document.addEventListener("webkitfullscreenchange", updateButtonVisibility);
   document.addEventListener("mozfullscreenchange", updateButtonVisibility);
   document.addEventListener("MSFullscreenChange", updateButtonVisibility);
 }
 
-// Handle fullscreen changes and resize
 function handleResize() {
   createAndRender();
 }
 
-// Listen for fullscreen changes
 document.addEventListener("fullscreenchange", handleResize);
 document.addEventListener("webkitfullscreenchange", handleResize);
 document.addEventListener("mozfullscreenchange", handleResize);
 document.addEventListener("MSFullscreenChange", handleResize);
-
-// Listen for window resize
 window.addEventListener("resize", handleResize);

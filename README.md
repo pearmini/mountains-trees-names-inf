@@ -18,10 +18,11 @@ Inspired by Lingdong Huang's [\{Shan, Shui\}\*](https://github.com/LingDong-/sha
 ## What it does
 
 1. **Generate** — Midpoint-displacement mountains unfold in two depth layers with radial gradients in blue, green, and gold.
-2. **Plant** — Every tree in `names.json` is placed along the ridgeline, drawn by [Charming.js](https://charmingjs.org/) from the same name-to-tree algorithm as [Name2Tree](https://tree.bairui.dev/).
+2. **Plant** — Community trees and the ITP archive in `names.json` merge into one list (community newest first). Index 0 sits at the screen center; higher indices alternate right, left, further right, further left, with stable seeded gaps. Pan forever — the list loops along the ridge.
 3. **Sign** — APack stamps mark authorship on each tree, visible marks of who grew what.
 4. **Explore** — D3 zoom and pan reveal an endless scroll; new terrain loads as you move.
-5. **Present** — At ITP Winter Show 2025, [Chloe](https://www.instagram.com/qiyun_chloe/) and I printed 60 pages on a [Riso](https://us.riso.com/) printer and tiled them on the wall, making the digital forest tangible.
+5. **Return** — Open **My trees** to browse, focus, or delete trees you planted (shared browser ID with [tree.bairui.dev](https://tree.bairui.dev/)). A live count shows how many trees are in the landscape.
+6. **Present** — At ITP Winter Show 2025, [Chloe](https://www.instagram.com/qiyun_chloe/) and I printed 60 pages on a [Riso](https://us.riso.com/) printer and tiled them on the wall, making the digital forest tangible.
 
 ## Why it exists
 
@@ -50,7 +51,7 @@ The landscape itself evolved in stages:
 ## How it works
 
 ```
-names.json (ITP Spring Show participants)
+community trees + names.json (merged ranks)
       │
       ▼
 ┌─────────────────────────────────────┐
@@ -60,7 +61,7 @@ names.json (ITP Spring Show participants)
       │
       ▼
 ┌─────────────────────────────────────┐
-│  generateTrees()                    │  place each name on the ridgeline
+│  placeMergedTrees()                 │  center-out slots, seeded gaps, infinite loop
 │  tree.js → Charming.js SVG          │  APack stamp per tree
 └─────────────────────────────────────┘
       │
@@ -83,9 +84,12 @@ names.json (ITP Spring Show participants)
 |-------|-------|
 | Rendering | [D3.js](https://d3js.org/) — zoom, paths, data join |
 | Trees | [Charming.js](https://charmingjs.org/), [apackjs](https://apack.bairui.dev/) |
+| Community | [Supabase](https://supabase.com/) — Postgres `landscape_trees` table, `@supabase/supabase-js`, Row Level Security |
+| Validation | `bad-words` profanity filter, length and URL/email checks (client-side) |
 | Noise | Custom Perlin (`noise.js`), `gl-matrix` |
 | Gradients | SVG `radialGradient` (`gradient.js`) |
 | Build | Vite |
+| Deploy | Vercel |
 
 ## Getting started
 
@@ -95,10 +99,11 @@ names.json (ITP Spring Show participants)
 git clone https://github.com/pearmini/infinite-landscape.git
 cd infinite-landscape
 pnpm install
+cp .env.example .env.local   # optional: enable planting via Supabase
 pnpm dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). Scroll and zoom to explore.
+Open [http://localhost:5173](http://localhost:5173). Scroll and zoom to explore. Without `.env.local`, the landscape loads; planting shows a friendly “not connected” message. The **?** button in modals walks through how a name becomes a tree.
 
 ```bash
 pnpm build     # production build
@@ -107,6 +112,13 @@ pnpm preview   # preview production build
 
 Append `?show=true` for fullscreen kiosk mode (hides footer links, adds a fullscreen button).
 
+### Supabase setup (community planting)
+
+Uses the same Supabase project as [tree.bairui.dev](https://tree.bairui.dev/) (`bairui-studio`). Browser IDs are shared via `name2tree_browser_id` in `localStorage`, so trees you plant here and in the forest app belong to the same visitor identity.
+
+1. Run [`supabase/landscape_trees.sql`](supabase/landscape_trees.sql) in the Supabase SQL Editor.
+2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` and on Vercel.
+
 ## Project structure
 
 ```
@@ -114,11 +126,21 @@ infinite-landscape/
 ├── src/
 │   ├── render.js   # Mountains, trees, zoom, lazy loading
 │   ├── tree.js     # Name → tree SVG (Charming.js)
+│   ├── ui.js           # Plant / My trees modals
+│   ├── howItWorks.js   # Step-by-step name → tree guide
+│   ├── animateTree.js  # Grow animation when planting
 │   ├── gradient.js # Radial gradient helpers
 │   ├── noise.js    # Perlin noise for terrain
 │   ├── theme.js    # Sky and mountain palette
 │   ├── names.json  # ITP Spring Show participant names
-│   └── main.js     # Mount, resize, kiosk mode
+│   ├── main.js     # Mount, resize, kiosk mode
+│   └── lib/
+│       ├── browserId.js        # Shared visitor ID with Name2Tree
+│       ├── supabase.js         # Client + browser ID header
+│       ├── validateName.js     # Profanity and input checks
+│       └── landscapeTreesApi.js
+├── supabase/
+│   └── landscape_trees.sql     # Schema + RLS
 ├── img/            # Screenshots and documentation images
 └── index.html
 ```

@@ -155,12 +155,12 @@ export function tree(
   const initLen = (140 / 480) * width;
   const baselineY = height * 0.618 + initLen;
   const context = cm.mat().translate(width / 2, baselineY);
-  branch(root, initLen, 0, 80);
+  branch(root, initLen, 0, 80, 0, 1);
 
-  function branch(node, len, rotation, angle, roseCount = 0) {
+  function branch(node, len, rotation, angle, roseCount = 0, depth = 1) {
     context.push();
     context.rotate(rotation);
-    paths.push({d: `M0,0L0,${-len}`, transform: context.transform()});
+    paths.push({d: `M0,0L0,${-len}`, transform: context.transform(), depth});
 
     if (node.children) {
       context.translate(0, -len);
@@ -204,7 +204,7 @@ export function tree(
         const childRotation = scaleAngle(stacked[i]);
         const prevRotation = stacked[prevIndex] ? scaleAngle(stacked[prevIndex]) : -angle;
         const diff = childRotation - prevRotation;
-        branch(child, len, (childRotation + prevRotation) / 2, Math.min(80, diff), isMerge ? mergeCount : 0);
+        branch(child, len, (childRotation + prevRotation) / 2, Math.min(80, diff), isMerge ? mergeCount : 0, depth + 1);
       }
     } else {
       // [n, d]
@@ -222,7 +222,7 @@ export function tree(
         const [n, d] = roseByCount[roseCount];
         const r = Math.sqrt(roseCount * len);
         context.translate(0, -len);
-        roses.push({r, n, d, transform: context.transform()});
+        roses.push({r, n, d, transform: context.transform(), depth});
       } else {
         const r = len / 12;
         context.translate(0, -len - r);
@@ -232,6 +232,7 @@ export function tree(
           cy: 0,
           r,
           transform: context.transform(),
+          depth,
         });
       }
     }
@@ -261,6 +262,7 @@ export function tree(
     const start = end ? width - totalLength : width / 2 + padding;
     const sw = 1.5;
     textNode = cm.svg("g", {
+      "data-tree-part": "name",
       transform: `translate(${start}, ${baselineY - cellSize - 5})`,
       children: [
         apack.text(text, {
@@ -280,6 +282,7 @@ export function tree(
     const dx = (-20 / 480) * width;
     const dy = (-55 / 480) * width;
     textNode = cm.svg("g", {
+      "data-tree-part": "name",
       children: [
         cm.svg("rect", {
           x: width + dx - textWidth - textPadding,
@@ -321,12 +324,14 @@ export function tree(
           fill: "transparent",
         }),
       cm.svg("g", flowers, {
+        "data-tree-part": "flower",
         transform: (d, i) => `translate(${flowerX(i)}, ${baselineY})`,
         children: (d, i) => [
           cm.svg("path", {
             d: `M0,0L0,${-initLen * 0.618}`,
             stroke: "black",
             strokeWidth,
+            "data-tree-part": "flower",
           }),
           cm.svg("g", {
             strokeWidth,
@@ -335,6 +340,7 @@ export function tree(
               rose(12, 1, i + 2, {
                 fill: THEME.background,
                 stroke: "black",
+                "data-tree-part": "flower",
               }),
             ],
           }),
@@ -348,6 +354,8 @@ export function tree(
             cm.svg("path", paths, {
               d: (d) => d.d,
               transform: (d) => d.transform,
+              "data-tree-part": "branch",
+              "data-depth": (d) => d.depth,
             }),
           ],
         }),
@@ -360,6 +368,8 @@ export function tree(
                 d: circlePath(d.r),
                 fill: THEME.background,
                 stroke: "black",
+                "data-tree-part": "flower",
+                "data-depth": (d) => d.depth,
               }),
             ].filter(Boolean),
         }),
@@ -370,6 +380,8 @@ export function tree(
             rose(d.r, d.n, d.d, {
               fill: THEME.background,
               stroke: "black",
+              "data-tree-part": "flower",
+              "data-depth": (d) => d.depth,
             }),
           ],
         }),

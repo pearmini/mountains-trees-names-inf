@@ -4,12 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{Mountains, Trees, Names}*</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <style>
+    :root {
+      --font-serif: "Newsreader", Georgia, serif;
+      --font-mono: "IBM Plex Mono", monospace;
+      --ink: #1a1a1a;
+      --paper: #f6d87b;
+      --panel: #fefaf1;
+      --error: #a33;
+    }
+
     body {
       margin: 0;
       padding: 0;
-      font-family: Arial, sans-serif;
+      font-family: var(--font-serif);
+      color: var(--ink);
       overflow: hidden;
     }
 
@@ -26,35 +42,572 @@
       align-items: flex-end;
       position: absolute;
       bottom: 20px;
-      right: 10px;
+      right: 16px;
       z-index: 100;
+      max-width: 320px;
+      text-align: right;
     }
 
     .title {
-      font-size: 16px;
-      margin: 0 0 10px 0;
+      font-family: var(--font-serif);
+      font-size: 17px;
+      font-weight: 500;
+      margin: 0 0 8px 0;
+      letter-spacing: 0.01em;
     }
 
     .description {
-      font-size: 12px;
+      font-family: var(--font-serif);
+      font-size: 13px;
+      line-height: 1.45;
       margin: 0;
+      opacity: 0.85;
+    }
+
+    .tree-count {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin: 10px 0 0;
+      opacity: 0.7;
+      letter-spacing: 0.02em;
     }
 
     .content a {
       color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    .github-link {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.92);
+      color: var(--ink);
+      backdrop-filter: blur(4px);
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .github-link:hover {
+      background: var(--panel);
+    }
+
+    .github-link:active {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .github-link svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 200;
+      display: flex;
+      gap: 8px;
+    }
+
+    .toolbar-btn {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .toolbar-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    body.interaction-blocked .github-link {
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    body.interaction-blocked #container {
+      pointer-events: none;
+    }
+
+    .toolbar-btn-primary {
+      background: var(--ink);
+      color: var(--panel);
+      border: 1.5px solid var(--ink);
+    }
+
+    .toolbar-btn-primary:hover:not(:disabled) {
+      background: #333;
+    }
+
+    .toolbar-btn-secondary {
+      background: rgba(254, 250, 241, 0.92);
+      color: var(--ink);
+      border: 1.5px solid var(--ink);
+      backdrop-filter: blur(4px);
+    }
+
+    .toolbar-btn-secondary:hover:not(:disabled) {
+      background: var(--panel);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.45);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .modal-group {
+      position: relative;
+      width: min(480px, calc(100vw - 40px));
+      max-width: calc(100vw - 40px);
+    }
+
+    .modal-group-with-help {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 12px;
+      width: max-content;
+      max-width: calc(100vw - 40px);
+    }
+
+    .modal-dialog {
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1.5px solid var(--ink);
+      border-radius: 8px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+      scrollbar-gutter: stable;
+    }
+
+    .modal-group-with-help .modal-dialog {
+      width: 480px;
+      flex: 0 0 480px;
+    }
+
+    .modal-help-dialog {
+      width: 360px;
+      max-height: 90vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+      flex: 0 0 auto;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px 0;
+    }
+
+    .modal-title {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .modal-help,
+    .modal-close {
+      font-family: var(--font-mono);
+      line-height: 1;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--ink);
+      padding: 0 4px;
+    }
+
+    .modal-help {
+      font-size: 17px;
+      font-weight: 600;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-help:hover,
+    .modal-help[aria-pressed="true"] {
+      background: var(--paper);
+    }
+
+    .modal-close {
+      font-size: 22px;
+    }
+
+    .help-body {
+      padding-top: 4px;
+    }
+
+    .help-step-title {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      line-height: 1.45;
+      margin: 0 0 8px;
+    }
+
+    .help-step-title a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    .help-visual {
+      height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: var(--paper);
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      border-radius: 4px;
+      padding: 14px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .help-visual-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 0;
+    }
+
+    .help-ascii {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      line-height: 1.8;
+      width: 100%;
+    }
+
+    .help-ascii p {
+      margin: 0;
+    }
+
+    .help-ascii-result {
+      margin-top: 8px !important;
+      padding-top: 8px;
+      border-top: 1px solid rgba(26, 26, 26, 0.12);
+    }
+
+    .help-char,
+    .help-code {
+      font-weight: 600;
+    }
+
+    .help-arrow {
+      margin: 0 8px;
+      opacity: 0.6;
+    }
+
+    .help-code-block {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: 0.04em;
+      height: 1.25em;
+      line-height: 1.25;
+      flex-shrink: 0;
+      width: 100%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .help-code-block:empty,
+    .help-code-block[aria-hidden="true"] {
+      visibility: hidden;
+    }
+
+    .help-tree-preview {
+      width: 280px;
+      height: 280px;
+      flex-shrink: 0;
+    }
+
+    .help-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .help-nav-btn {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--ink);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .help-nav-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .help-nav-btn:not(:disabled):hover {
+      background: var(--paper);
+    }
+
+    .help-dots {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .help-dot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: 1.5px solid var(--ink);
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .help-dot-active {
+      background: var(--ink);
+    }
+
+    @media (max-width: 900px) {
+      .modal-group-with-help {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .modal-group-with-help .modal-dialog,
+      .modal-group-with-help .modal-help-dialog {
+        width: 100%;
+      }
+    }
+
+    .modal-body {
+      padding: 16px 18px 20px;
+    }
+
+    .modal-preview {
+      width: 100%;
+      aspect-ratio: 1;
+      margin-bottom: 14px;
+      background: var(--paper);
+      border: 1px solid rgba(26, 26, 26, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .modal-input {
+      width: 100%;
+      box-sizing: border-box;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      background: #fff;
+      margin-bottom: 10px;
+    }
+
+    .modal-input:focus {
+      outline: 2px solid var(--paper);
+      outline-offset: 1px;
+    }
+
+    .modal-privacy {
+      font-family: var(--font-serif);
+      font-size: 12px;
+      line-height: 1.45;
+      color: #444;
+      opacity: 0.85;
+      margin: 0 0 12px;
+    }
+
+    .modal-error {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--error);
+      margin: 0 0 12px;
+    }
+
+    .modal-message {
+      font-family: var(--font-serif);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0 18px 20px;
+      color: #333;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .modal-group:has(.modal-dialog-my-trees) {
+      width: min(960px, calc(100vw - 40px));
+    }
+
+    .modal-dialog-my-trees {
+      width: 100%;
+    }
+
+    .my-trees-body {
+      padding-top: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .my-trees-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      padding-bottom: 4px;
+    }
+
+    .my-tree-cell {
+      position: relative;
+      flex: 0 0 280px;
+      width: 280px;
+      border: 1.5px solid var(--ink);
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .my-tree-thumb {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .my-tree-thumb svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .my-tree-label {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      margin: 0;
+      padding: 8px 10px;
+      background: var(--panel);
+      border-top: 1px solid rgba(26, 26, 26, 0.15);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .my-tree-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .my-tree-action {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1.5px solid transparent;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .my-tree-cell:hover .my-tree-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .my-tree-cell:hover .my-tree-action {
+      border-color: var(--ink);
+      background: var(--panel);
+    }
+
+    .my-tree-action:active {
+      background: var(--ink);
+      color: var(--panel);
     }
   </style>
   <body>
+    <a
+      class="github-link"
+      href="https://github.com/pearmini/infinite-landscape"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="GitHub repository"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"
+        />
+      </svg>
+    </a>
     <div class="content">
-      <h1 class="title">
-        <a href="https://github.com/pearmini/infinite-landscape" target="_blank">{Mountains, Trees, Names}*</a>
-      </h1>
+      <h1 class="title">{Mountains, Trees, Names}*</h1>
       <p class="description">
-        A Procedurally Generated Infinite Landscape by
-        <a href="https://tree.bairui.dev" target="_blank">Find the Tree in Your Name</a> Participants in
-        <a href="https://itp.nyu.edu/shows/spring2025/projects/#11830-find-the-tree-in-your-name" target="_blank"
-          >ITP Spring 2025</a
-        >.
+        Pan and zoom a procedurally generated infinite landscape. Every name becomes a
+        <a href="https://tree.bairui.dev" target="_blank" rel="noopener noreferrer">tree</a>.
       </p>
     </div>
     <div id="container"></div>

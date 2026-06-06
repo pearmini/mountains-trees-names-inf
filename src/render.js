@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import {animateTreeGrow, prepareTreeForGrow} from "./animateTree.js";
 import {randomNoise} from "./noise.js";
 import {applyGradient} from "./gradient.js";
 import {tree} from "./tree.js";
@@ -165,49 +166,225 @@ function findYOnMountain(x, mountains) {
   return null;
 }
 
-function generateTrees({startX, endX, seed, height, mountains}) {
-  const spacing = 350;
-  const trees = [];
-  const randomName = (x) => random(x * 1000) * namesData.length;
-  const noiseSpacing = randomNoise(0, 1.2, {seed, octaves: 1, falloff: 0.5});
+const TREE_DY = 40;
+const TREE_MIN_Y = 420;
+const TREE_MAX_Y = 640;
+const GAP_MIN = 250;
+const GAP_MAX = 450;
 
-  const dy = 40;
+function createTreeScaler() {
+  return d3.scaleSqrt().domain([TREE_MIN_Y, TREE_MAX_Y]).range([200, 400]);
+}
 
-  // Fixed Y range for trees for consistent y position.
-  const minY = 420;
-  const maxY = 640;
-  const scaleWidth = d3.scaleSqrt().domain([minY, maxY]).range([200, 400]);
+function buildMergedRanks(userTrees) {
+  const community = [...userTrees].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
-  function addTree(x) {
-    const px = x + spacing * noiseSpacing(x);
-    const y = findYOnMountain(px, mountains);
-    if (y !== null && y >= 0) {
-      const nameIndex = Math.floor(randomName(x));
-      const name = namesData[nameIndex].name;
-      const py = Math.min(height - 20, y + dy);
-      const treeWidth = scaleWidth(py);
-      trees.push({x: px, y: py, width: treeWidth, name, id: `tree-${Math.floor(px / 100)}-${nameIndex}`});
+  const communityRanks = community.map((entry) => ({
+    name: entry.name,
+    id: entry.id,
+    source: "community",
+    dbId: entry.id,
+    browserId: entry.browserId,
+    createdAt: entry.createdAt,
+  }));
+
+  const archiveRanks = namesData.map((entry, index) => ({
+    name: entry.name,
+    id: entry.id ?? `archive-${index}`,
+    source: "archive",
+  }));
+
+  return [...communityRanks, ...archiveRanks];
+}
+
+function gapForSlot(slot, seed) {
+  return GAP_MIN + random(seed * 10000 + slot * 137) * (GAP_MAX - GAP_MIN);
+}
+
+function createSlotX(seed, originX) {
+  const cache = new Map();
+
+  function slotX(slot) {
+    if (cache.has(slot)) return cache.get(slot);
+
+    let x;
+    if (slot === 0) {
+      x = originX;
+    } else if (slot === 1) {
+      x = originX + gapForSlot(1, seed);
+    } else if (slot === 2) {
+      x = originX - gapForSlot(2, seed);
+    } else if (slot % 2 === 1) {
+      x = slotX(slot - 2) + gapForSlot(slot, seed);
+    } else {
+      x = slotX(slot - 2) - gapForSlot(slot, seed);
     }
+
+    cache.set(slot, x);
+    return x;
   }
 
-  let px;
-  for (px = 0; px < endX; px += spacing) addTree(px);
-  for (px = -spacing; px > startX; px -= spacing) addTree(px);
+  return slotX;
+}
 
-  return trees;
+function slotsInRange(startX, endX, seed, originX) {
+  const slotX = createSlotX(seed, originX);
+  const slots = [];
+
+  if (startX <= originX && originX <= endX) slots.push(0);
+
+  for (let s = 1; ; s += 2) {
+    const x = slotX(s);
+    if (x > endX) break;
+    slots.push(s);
+  }
+
+  for (let s = 2; ; s += 2) {
+    const x = slotX(s);
+    if (x < startX) break;
+    slots.push(s);
+  }
+
+  return slots.sort((a, b) => a - b);
+}
+
+function placeTreeOnMountain({x, name, id, height, mountains, scaleWidth, source = "archive", dbId, browserId, slot}) {
+  const y = findYOnMountain(x, mountains);
+  if (y === null || y < 0) return null;
+  const py = Math.min(height - 20, y + TREE_DY);
+  return {
+    x,
+    y: py,
+    width: scaleWidth(py),
+    name,
+    id,
+    source,
+    dbId,
+    browserId,
+    slot,
+  };
+}
+
+function placeMergedTrees({userTrees, startX, endX, seed, height, mountains, centerX}) {
+  const ranks = buildMergedRanks(userTrees);
+  if (ranks.length === 0) return [];
+
+  const slotX = createSlotX(seed, centerX);
+  const scaleWidth = createTreeScaler();
+  const slots = slotsInRange(startX, endX, seed, centerX);
+
+  return slots
+    .map((slot) => {
+      const rank = ranks[slot % ranks.length];
+      return placeTreeOnMountain({
+        x: slotX(slot),
+        name: rank.name,
+        id: `slot-${slot}-${rank.id}`,
+        height,
+        mountains,
+        scaleWidth,
+        source: rank.source,
+        dbId: rank.dbId,
+        browserId: rank.browserId,
+        slot,
+      });
+    })
+    .filter(Boolean);
 }
 
 export function render({
   width = 1000,
-  height = 600,
+  height = 540,
   currentX = 0,
   startX = currentX - width,
   endX = currentX + width * 2,
   translateX = 0,
   scaleX = 1,
   seed = 10000,
+  userTrees = [],
 } = {}) {
+  let communityTreesData = userTrees;
+  const centerX = currentX + width / 2;
   const state = {startX, endX, translateX, scaleX, currentX, offsetX: 0, x0: 0};
+  let centerTreeY = height * 0.75;
+  let interactionLocked = false;
+  let pendingGrowDbId = null;
+  let growCompleteCallback = null;
+  let growStarted = false;
+
+  const defaultZoomFilter = (event) =>
+    (!event.ctrlKey || event.type === "wheel") && !event.button;
+
+  function setInteractionLocked(locked) {
+    interactionLocked = locked;
+    zoomBehavior.filter(locked ? () => false : defaultZoomFilter);
+    svg.style("pointer-events", locked ? "none" : "auto");
+    svg.style("cursor", locked ? "default" : "grab");
+  }
+
+  function centerTransform() {
+    const k = 1;
+    const tx = width / 2 - centerX * k;
+    return d3.zoomIdentity.translate(tx, 0).scale(k);
+  }
+
+  function transformForWorldX(worldX, k = 1) {
+    return d3.zoomIdentity.translate(width / 2 - worldX * k, 0).scale(k);
+  }
+
+  function isAtTransform(target) {
+    const current = d3.zoomTransform(svg.node());
+    const epsilon = 0.5;
+    return (
+      Math.abs(current.x - target.x) < epsilon &&
+      Math.abs(current.y - target.y) < epsilon &&
+      Math.abs(current.k - target.k) < 0.001
+    );
+  }
+
+  function getWorldXForDbId(dbId) {
+    const ranks = buildMergedRanks(communityTreesData);
+    const rankIndex = ranks.findIndex((rank) => rank.dbId === dbId);
+    if (rankIndex < 0) return null;
+
+    const slotX = createSlotX(seed, centerX);
+    const viewCenterX = (width / 2 - state.translateX) / state.scaleX;
+    const n = ranks.length;
+    const originX = slotX(rankIndex);
+    const approxGap = (GAP_MIN + GAP_MAX) / 2;
+    const deltaSlots = Math.ceil(Math.abs(viewCenterX - originX) / approxGap / n) + 2;
+
+    let bestSlot = rankIndex;
+    let bestDist = Infinity;
+    for (let k = -deltaSlots; k <= deltaSlots; k++) {
+      const slot = rankIndex + k * n;
+      if (slot < 0) continue;
+      const x = slotX(slot);
+      const dist = Math.abs(x - viewCenterX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestSlot = slot;
+      }
+    }
+
+    return slotX(bestSlot);
+  }
+
+  function panToTransformAnimated(target, duration = 700) {
+    if (isAtTransform(target)) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      svg
+        .transition()
+        .duration(duration)
+        .ease(d3.easeCubicInOut)
+        .call(zoomBehavior.transform, target)
+        .on("end", resolve);
+    });
+  }
 
   const line = d3
     .line()
@@ -288,7 +465,18 @@ export function render({
 
     const mountains = [...farMountains, ...closeMountains];
 
-    const trees = generateTrees({startX, endX, seed, height, mountains: closeMountains});
+    const trees = placeMergedTrees({
+      userTrees: communityTreesData,
+      startX,
+      endX,
+      seed,
+      height,
+      mountains: closeMountains,
+      centerX,
+    });
+
+    const centerTree = trees.find((tree) => tree.slot === 0);
+    if (centerTree) centerTreeY = centerTree.y;
 
     const scaledHeight = height * scaleX;
 
@@ -320,11 +508,15 @@ export function render({
     // Update trees
     const treeGroups = treesGroup.selectAll("g.tree-group").data(trees, (d) => d.id);
 
+    const growDbId = pendingGrowDbId;
+    pendingGrowDbId = null;
+
     treeGroups
       .enter()
       .append("g")
       .attr("class", "tree-group")
       .each(function (d) {
+        const group = this;
         const treeSvg = tree(d.name, {
           padding: 0,
           number: false,
@@ -333,7 +525,18 @@ export function render({
           width: d.width,
           strokeWidth: 1,
         }).render();
-        d3.select(this).append(() => treeSvg);
+        d3.select(group).append(() => treeSvg);
+
+        if (growDbId && d.slot === 0 && d.dbId === growDbId) {
+          growStarted = true;
+          setInteractionLocked(true);
+          prepareTreeForGrow(group);
+          animateTreeGrow(group).then(() => {
+              setInteractionLocked(false);
+              growCompleteCallback?.();
+              growCompleteCallback = null;
+            });
+        }
       })
       .merge(treeGroups)
       .attr("transform", (d) => {
@@ -347,5 +550,52 @@ export function render({
     treeGroups.exit().remove();
   }
 
-  return svg.node();
+  return {
+    node: svg.node(),
+    setUserTrees(trees) {
+      communityTreesData = trees;
+      update();
+    },
+    setUserTreesAndGrow(trees, growDbId) {
+      return new Promise((resolve) => {
+        if (!growDbId) {
+          communityTreesData = trees;
+          update();
+          resolve();
+          return;
+        }
+
+        growStarted = false;
+        growCompleteCallback = resolve;
+        setInteractionLocked(true);
+
+        this.panToCenterAnimated().then(() => {
+          pendingGrowDbId = growDbId;
+          communityTreesData = trees;
+          update();
+          requestAnimationFrame(() => {
+            if (!growStarted) {
+              setInteractionLocked(false);
+              growCompleteCallback?.();
+              growCompleteCallback = null;
+            }
+          });
+        });
+      });
+    },
+    panToCenter() {
+      svg.call(zoomBehavior.transform, centerTransform());
+    },
+    panToCenterAnimated(duration = 700) {
+      return panToTransformAnimated(centerTransform(), duration);
+    },
+    panToTreeAnimated(dbId, duration = 700) {
+      const worldX = getWorldXForDbId(dbId);
+      if (worldX === null) return Promise.resolve();
+      return panToTransformAnimated(transformForWorldX(worldX, 1), duration);
+    },
+    isInteractionLocked() {
+      return interactionLocked;
+    },
+  };
 }
