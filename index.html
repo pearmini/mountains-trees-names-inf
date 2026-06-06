@@ -64,6 +64,14 @@
       opacity: 0.85;
     }
 
+    .tree-count {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin: 10px 0 0;
+      opacity: 0.7;
+      letter-spacing: 0.02em;
+    }
+
     .content a {
       color: inherit;
       text-decoration-thickness: 1px;
@@ -256,18 +264,28 @@
       justify-content: flex-end;
     }
 
+    .modal-dialog-my-trees {
+      width: min(720px, 100%);
+    }
+
     .my-trees-body {
       padding-top: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
     }
 
     .my-trees-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      padding-bottom: 4px;
     }
 
     .my-tree-cell {
       position: relative;
+      flex: 0 0 280px;
+      width: 280px;
       border: 1.5px solid var(--ink);
       border-radius: 4px;
       overflow: hidden;
@@ -277,13 +295,23 @@
     .my-tree-thumb {
       width: 100%;
       aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .my-tree-thumb svg {
+      display: block;
+      width: 100%;
+      height: 100%;
     }
 
     .my-tree-label {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 13px;
       margin: 0;
-      padding: 6px 8px;
+      padding: 8px 10px;
       background: var(--panel);
       border-top: 1px solid rgba(26, 26, 26, 0.15);
       white-space: nowrap;
@@ -291,57 +319,43 @@
       text-overflow: ellipsis;
     }
 
-    .my-tree-delete {
+    .my-tree-actions {
       position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 16px;
-      height: 16px;
-      padding: 0;
-      border: none;
-      background: transparent;
-      cursor: pointer;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
       pointer-events: none;
-      transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+      transition: opacity 0.15s ease;
     }
 
-    .my-tree-dot {
-      display: block;
-      font-family: var(--font-mono);
-      font-size: 16px;
-      font-weight: bold;
-      line-height: 1;
-      color: var(--ink);
-    }
-
-    .my-tree-trash {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      color: var(--ink);
-    }
-
-    .my-tree-cell:hover .my-tree-delete {
-      width: 26px;
-      height: 26px;
-      border: 1.5px solid var(--ink);
+    .my-tree-action {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1.5px solid transparent;
       border-radius: 4px;
-      background: var(--panel);
-      pointer-events: auto;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.15s ease, border-color 0.15s ease;
     }
 
-    .my-tree-cell:hover .my-tree-dot {
-      display: none;
+    .my-tree-cell:hover .my-tree-actions {
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .my-tree-cell:hover .my-tree-trash {
-      display: flex;
+    .my-tree-cell:hover .my-tree-action {
+      border-color: var(--ink);
+      background: var(--panel);
     }
 
-    .my-tree-delete:active {
+    .my-tree-action:active {
       background: var(--ink);
       color: var(--panel);
     }

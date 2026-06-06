@@ -1,18 +1,23 @@
 import {tree} from "./tree.js";
+import namesData from "./names.json";
 import {getBrowserId} from "./lib/browserId.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
 import {validateName} from "./lib/validateName.js";
 
 const PREVIEW_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
-const THUMB_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false, width: 200};
+const THUMB_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
 
 function renderTreePreview(container, name, options = PREVIEW_OPTIONS) {
   container.innerHTML = "";
   const text = name.trim() || "Name To Tree";
-  const node = tree(text, options).render();
-  node.setAttribute("viewBox", "0 0 480 480");
+  const width = options.width ?? 480;
+  const height = options.height ?? width;
+  const node = tree(text, {...options, width, height}).render();
+  node.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  node.setAttribute("preserveAspectRatio", "xMidYMid meet");
   node.style.width = "100%";
   node.style.height = "100%";
+  node.style.display = "block";
   container.appendChild(node);
 }
 
@@ -60,30 +65,42 @@ function createModal({title, onClose}) {
   };
 }
 
-function createDeleteButton(onDelete) {
+function createTreeActionButton({className, label, icon, onClick}) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "my-tree-delete";
-  button.setAttribute("aria-label", "Delete tree");
-
-  const dot = document.createElement("span");
-  dot.className = "my-tree-dot";
-  dot.textContent = "*";
-
-  const trash = document.createElement("span");
-  trash.className = "my-tree-trash";
-  trash.innerHTML =
-    '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>';
-
-  button.append(dot, trash);
+  button.className = `my-tree-action ${className}`;
+  button.setAttribute("aria-label", label);
+  button.innerHTML = icon;
   button.addEventListener("click", (event) => {
     event.stopPropagation();
-    onDelete();
+    onClick();
   });
   return button;
 }
 
-export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
+function createTreeActions({onFocus, onDelete}) {
+  const actions = document.createElement("div");
+  actions.className = "my-tree-actions";
+  actions.append(
+    createTreeActionButton({
+      className: "my-tree-focus",
+      label: "Focus on tree",
+      icon:
+        '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>',
+      onClick: onFocus,
+    }),
+    createTreeActionButton({
+      className: "my-tree-delete",
+      label: "Delete tree",
+      icon:
+        '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+      onClick: onDelete,
+    }),
+  );
+  return actions;
+}
+
+export function initUI({onAdd, onDelete, onFocusTree, getUserTrees, refreshUserTrees}) {
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
 
@@ -99,6 +116,28 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
 
   toolbar.append(plantButton, myTreesButton);
   document.body.appendChild(toolbar);
+
+  const totalTreesEl = document.createElement("p");
+  totalTreesEl.className = "tree-count";
+  document.querySelector(".content")?.appendChild(totalTreesEl);
+
+  function ownTreeCount() {
+    const browserId = getBrowserId();
+    return getUserTrees().filter((entry) => entry.browserId === browserId).length;
+  }
+
+  function myTreesLabel() {
+    return `My trees (${ownTreeCount()})`;
+  }
+
+  function totalTreeCount() {
+    return getUserTrees().length + namesData.length;
+  }
+
+  function updateTreeCounts() {
+    myTreesButton.textContent = myTreesLabel();
+    totalTreesEl.textContent = `${totalTreeCount().toLocaleString()} trees in the landscape`;
+  }
 
   let activeModal = null;
 
@@ -200,7 +239,8 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
       return;
     }
 
-    const modal = createModal({title: "My trees", onClose: closeModal});
+    const modal = createModal({title: myTreesLabel(), onClose: closeModal});
+    modal.dialog.classList.add("modal-dialog-my-trees");
     activeModal = modal;
 
     const body = document.createElement("div");
@@ -237,16 +277,22 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
       cell.append(
         thumb,
         label,
-        createDeleteButton(async () => {
-          if (!confirm(`Remove "${entry.name}" from the landscape?`)) return;
-          try {
-            await onDelete(entry.id);
-            await refreshUserTrees();
+        createTreeActions({
+          onFocus: () => {
             closeModal();
-            openMyTreesModal();
-          } catch (err) {
-            openMessageModal("Could not delete", err.message ?? "Please try again.");
-          }
+            void onFocusTree(entry.id);
+          },
+          onDelete: async () => {
+            if (!confirm(`Remove "${entry.name}" from the landscape?`)) return;
+            try {
+              await onDelete(entry.id);
+              await refreshUserTrees();
+              closeModal();
+              openMyTreesModal();
+            } catch (err) {
+              openMessageModal("Could not delete", err.message ?? "Please try again.");
+            }
+          },
         }),
       );
       grid.appendChild(cell);
@@ -257,6 +303,7 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
 
   plantButton.addEventListener("click", openAddModal);
   myTreesButton.addEventListener("click", openMyTreesModal);
+  updateTreeCounts();
 
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
@@ -264,5 +311,5 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
     myTreesButton.disabled = blocked;
   }
 
-  return {closeModal, setInteractionBlocked};
+  return {closeModal, setInteractionBlocked, updateTreeCounts};
 }

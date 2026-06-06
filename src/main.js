@@ -11,6 +11,8 @@ const showFullscreenButton = urlParams.get("show") === "true";
 
 let currentController = null;
 let userTrees = [];
+let setInteractionBlocked = () => {};
+let updateTreeCounts = () => {};
 let currentSeed = process.env.NODE_ENV === "development" ? 10000 : Date.now();
 
 async function loadUserTrees() {
@@ -47,6 +49,7 @@ async function refreshUserTrees() {
   if (currentController) {
     currentController.setUserTrees(userTrees);
   }
+  updateTreeCounts();
   return userTrees;
 }
 
@@ -54,12 +57,13 @@ async function bootstrap() {
   await loadUserTrees();
   createAndRender();
 
-  const {setInteractionBlocked} = initUI({
+  ({setInteractionBlocked, updateTreeCounts} = initUI({
     getUserTrees: () => userTrees,
     refreshUserTrees,
     onAdd: async (name) => {
       const added = await addLandscapeTree(name);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
+      updateTreeCounts();
       if (currentController) {
         setInteractionBlocked(true);
         void currentController.setUserTreesAndGrow(userTrees, added.id).finally(() => {
@@ -70,11 +74,21 @@ async function bootstrap() {
     onDelete: async (id) => {
       await deleteLandscapeTree(id);
       userTrees = userTrees.filter((tree) => tree.id !== id);
+      updateTreeCounts();
       if (currentController) {
         currentController.setUserTrees(userTrees);
       }
     },
-  });
+    onFocusTree: async (id) => {
+      if (!currentController) return;
+      setInteractionBlocked(true);
+      try {
+        await currentController.panToTreeAnimated(id);
+      } finally {
+        setInteractionBlocked(false);
+      }
+    },
+  }));
 }
 
 bootstrap();

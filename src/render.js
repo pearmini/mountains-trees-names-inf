@@ -324,6 +324,68 @@ export function render({
     svg.style("cursor", locked ? "default" : "grab");
   }
 
+  function centerTransform() {
+    const k = 1;
+    const tx = width / 2 - centerX * k;
+    return d3.zoomIdentity.translate(tx, 0).scale(k);
+  }
+
+  function transformForWorldX(worldX, k = 1) {
+    return d3.zoomIdentity.translate(width / 2 - worldX * k, 0).scale(k);
+  }
+
+  function isAtTransform(target) {
+    const current = d3.zoomTransform(svg.node());
+    const epsilon = 0.5;
+    return (
+      Math.abs(current.x - target.x) < epsilon &&
+      Math.abs(current.y - target.y) < epsilon &&
+      Math.abs(current.k - target.k) < 0.001
+    );
+  }
+
+  function getWorldXForDbId(dbId) {
+    const ranks = buildMergedRanks(communityTreesData);
+    const rankIndex = ranks.findIndex((rank) => rank.dbId === dbId);
+    if (rankIndex < 0) return null;
+
+    const slotX = createSlotX(seed, centerX);
+    const viewCenterX = (width / 2 - state.translateX) / state.scaleX;
+    const n = ranks.length;
+    const originX = slotX(rankIndex);
+    const approxGap = (GAP_MIN + GAP_MAX) / 2;
+    const deltaSlots = Math.ceil(Math.abs(viewCenterX - originX) / approxGap / n) + 2;
+
+    let bestSlot = rankIndex;
+    let bestDist = Infinity;
+    for (let k = -deltaSlots; k <= deltaSlots; k++) {
+      const slot = rankIndex + k * n;
+      if (slot < 0) continue;
+      const x = slotX(slot);
+      const dist = Math.abs(x - viewCenterX);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestSlot = slot;
+      }
+    }
+
+    return slotX(bestSlot);
+  }
+
+  function panToTransformAnimated(target, duration = 700) {
+    if (isAtTransform(target)) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      svg
+        .transition()
+        .duration(duration)
+        .ease(d3.easeCubicInOut)
+        .call(zoomBehavior.transform, target)
+        .on("end", resolve);
+    });
+  }
+
   const line = d3
     .line()
     .x((d) => d.x)
@@ -522,22 +584,15 @@ export function render({
       });
     },
     panToCenter() {
-      const k = 1;
-      const tx = width / 2 - centerX * k;
-      svg.call(zoomBehavior.transform, d3.zoomIdentity.translate(tx, 0).scale(k));
+      svg.call(zoomBehavior.transform, centerTransform());
     },
     panToCenterAnimated(duration = 700) {
-      const k = 1;
-      const tx = width / 2 - centerX * k;
-      const target = d3.zoomIdentity.translate(tx, 0).scale(k);
-      return new Promise((resolve) => {
-        svg
-          .transition()
-          .duration(duration)
-          .ease(d3.easeCubicInOut)
-          .call(zoomBehavior.transform, target)
-          .on("end", resolve);
-      });
+      return panToTransformAnimated(centerTransform(), duration);
+    },
+    panToTreeAnimated(dbId, duration = 700) {
+      const worldX = getWorldXForDbId(dbId);
+      if (worldX === null) return Promise.resolve();
+      return panToTransformAnimated(transformForWorldX(worldX, 1), duration);
     },
     isInteractionLocked() {
       return interactionLocked;
