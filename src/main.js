@@ -5,9 +5,12 @@ import {
   deleteLandscapeTree,
   fetchLandscapeTrees,
 } from "./lib/landscapeTreesApi.js";
+import {inject} from "@vercel/analytics";
 
 const urlParams = new URLSearchParams(window.location.search);
 const showFullscreenButton = urlParams.get("show") === "true";
+
+inject();
 
 let currentController = null;
 let userTrees = [];
