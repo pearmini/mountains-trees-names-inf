@@ -1,4 +1,5 @@
 import {render} from "./render.js";
+import {initShowModeQr} from "./showModeQr.js";
 import {initUI} from "./ui.js";
 import {
   addLandscapeTree,
@@ -12,6 +13,7 @@ const showMode = urlParams.get("show") === "true";
 
 if (showMode) {
   document.body.classList.add("show-mode");
+  initShowModeQr();
 }
 
 inject();

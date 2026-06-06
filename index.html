@@ -408,6 +408,50 @@
       }
     }
 
+    .show-mode-qr-panel {
+      display: none;
+    }
+
+    body.show-mode .show-mode-qr-panel {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .show-mode-qr-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.92);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(4px);
+    }
+
+    .show-mode-qr-code {
+      display: block;
+      width: 80px;
+      height: 80px;
+    }
+
+    .show-mode-qr-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      opacity: 0.8;
+    }
+
     @media (max-width: 640px) {
       body.show-mode {
         padding: 12px 0;
@@ -447,6 +491,17 @@
       body.show-mode .toolbar-btn {
         font-size: 16px;
         padding: 12px 22px;
+      }
+
+      body.show-mode .show-mode-qr-panel {
+        right: 12px;
+        bottom: 12px;
+        gap: 8px;
+      }
+
+      .show-mode-qr-code {
+        width: 64px;
+        height: 64px;
       }
 
       body.show-mode .modal-group:has(.modal-dialog-plant-show) {

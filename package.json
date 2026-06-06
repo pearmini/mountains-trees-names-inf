@@ -18,6 +18,7 @@
     "bad-words": "^4.0.0",
     "charmingjs": "0.0.17",
     "d3": "^7.9.0",
-    "gl-matrix": "^3.4.4"
+    "gl-matrix": "^3.4.4",
+    "qrcode": "^1.5.4"
   }
 }
