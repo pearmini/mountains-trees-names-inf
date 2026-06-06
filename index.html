@@ -120,6 +120,44 @@
       gap: 8px;
     }
 
+    .toolbar-item-with-tooltip {
+      position: relative;
+      display: flex;
+    }
+
+    .toolbar-tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      width: max-content;
+      max-width: 220px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.96);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.4;
+      text-align: center;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+    }
+
+    .toolbar-item-with-tooltip:hover .toolbar-tooltip,
+    .toolbar-item-with-tooltip:focus-within .toolbar-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .toolbar-btn {
       font-family: var(--font-mono);
       font-size: 13px;
