@@ -116,6 +116,7 @@ export function tree(
     line = true,
     end = true,
     strokeWidth = 1.5,
+    stampCellSize = 50,
   } = {}
 ) {
   text = text.trim();
@@ -249,7 +250,7 @@ export function tree(
       throw new Error("Too many words");
     }
 
-    let cellSize = 50;
+    let cellSize = stampCellSize;
     const padding = 20;
     let totalLength = wordLength * cellSize + padding * 2;
     if (totalLength > width / 2) {

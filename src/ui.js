@@ -3,10 +3,27 @@ import namesData from "./names.json";
 import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
+import {renderTreePngBlob} from "./lib/treeImageExport.js";
+import {uploadTreePng} from "./lib/treeImageUpload.js";
 import {validateName} from "./lib/validateName.js";
+import {createTreePrintQrModal} from "./treePrintQr.js";
 
-const PREVIEW_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
-const THUMB_OPTIONS = {grid: false, padding: 0, number: false, line: false, end: false};
+const PREVIEW_OPTIONS = {
+  grid: false,
+  padding: 0,
+  number: false,
+  line: false,
+  end: false,
+  stampCellSize: 80,
+};
+const THUMB_OPTIONS = {
+  grid: false,
+  padding: 0,
+  number: false,
+  line: false,
+  end: false,
+  stampCellSize: 80,
+};
 
 function renderTreePreview(container, name, options = PREVIEW_OPTIONS) {
   container.innerHTML = "";
@@ -231,12 +248,35 @@ export function initUI({
   }
 
   let activeModal = null;
+  let printQrModal = null;
+
+  function closePrintQrModal() {
+    if (printQrModal) {
+      printQrModal.destroy();
+      printQrModal = null;
+    }
+  }
 
   function closeModal() {
+    closePrintQrModal();
     if (activeModal) {
       activeModal.destroy();
       activeModal = null;
     }
+  }
+
+  async function openTreePrintQr(name) {
+    closePrintQrModal();
+
+    const pngBlob = await renderTreePngBlob(name);
+    const imageUrl = await uploadTreePng(pngBlob, name);
+
+    printQrModal = createTreePrintQrModal({
+      name,
+      imageUrl,
+      onClose: closePrintQrModal,
+    });
+    document.body.appendChild(printQrModal.overlay);
   }
 
   function openAddModal() {
@@ -286,7 +326,15 @@ export function initUI({
     submit.className = "toolbar-btn toolbar-btn-primary";
     submit.textContent = "Plant your tree";
 
-    actions.appendChild(submit);
+    let takeHomeButton = null;
+    if (showMode) {
+      takeHomeButton = document.createElement("button");
+      takeHomeButton.type = "button";
+      takeHomeButton.className = "toolbar-btn toolbar-btn-secondary";
+      takeHomeButton.textContent = "Take home";
+    }
+
+    actions.append(submit, ...(takeHomeButton ? [takeHomeButton] : []));
     body.append(preview, input, privacy, error, actions);
     modal.dialog.appendChild(body);
     document.body.appendChild(modal.overlay);
@@ -321,6 +369,31 @@ export function initUI({
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") handleSubmit();
     });
+
+    if (takeHomeButton) {
+      takeHomeButton.addEventListener("click", async () => {
+        const validation = validateName(input.value);
+        if (!validation.ok) {
+          error.textContent = validation.error;
+          error.hidden = false;
+          return;
+        }
+
+        error.hidden = true;
+        takeHomeButton.disabled = true;
+        const originalLabel = takeHomeButton.textContent;
+        takeHomeButton.textContent = "Preparing…";
+
+        try {
+          await openTreePrintQr(validation.name);
+        } catch (err) {
+          openMessageModal("Could not prepare print", err.message ?? "Please try again.");
+        } finally {
+          takeHomeButton.disabled = false;
+          takeHomeButton.textContent = originalLabel;
+        }
+      });
+    }
   }
 
   function openMessageModal(title, message) {
