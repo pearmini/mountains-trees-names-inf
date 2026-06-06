@@ -259,6 +259,9 @@ export function initUI({
       onClose: closeModal,
       getHelpSample: () => input.value,
     });
+    if (showMode) {
+      modal.dialog.classList.add("modal-dialog-plant-show");
+    }
     activeModal = modal;
 
     const privacy = document.createElement("p");

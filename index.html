@@ -424,6 +424,25 @@
         font-size: 16px;
         padding: 12px 22px;
       }
+
+      body.show-mode .modal-group:has(.modal-dialog-plant-show) {
+        width: min(100%, calc(100vw - 24px));
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-title {
+        font-size: 19px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-input {
+        font-size: 16px;
+        padding: 12px 14px;
+      }
+
+      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-dialog-plant-show,
+      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-help-dialog {
+        width: 100%;
+        flex: 1 1 auto;
+      }
     }
 
     .modal-overlay {
@@ -748,6 +767,67 @@
     .modal-actions {
       display: flex;
       justify-content: flex-end;
+    }
+
+    body.show-mode .modal-group:has(.modal-dialog-plant-show) {
+      width: min(800px, calc(100vw - 48px));
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-header {
+      padding: 22px 28px 0;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-title {
+      font-size: 22px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-close {
+      font-size: 28px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-help {
+      font-size: 20px;
+      width: 30px;
+      height: 30px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-body {
+      padding: 22px 28px 28px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-preview {
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-input {
+      font-size: 18px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      border-radius: 6px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-privacy {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-error {
+      font-size: 14px;
+    }
+
+    body.show-mode .modal-dialog-plant-show .modal-actions .toolbar-btn {
+      font-size: 18px;
+      padding: 14px 32px;
+    }
+
+    body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-dialog-plant-show {
+      width: 800px;
+      flex: 0 0 800px;
+    }
+
+    body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-help-dialog {
+      width: 420px;
     }
 
     .modal-group:has(.modal-dialog-my-trees) {
