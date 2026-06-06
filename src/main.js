@@ -38,7 +38,7 @@ function createAndRender({panToOrigin = false} = {}) {
   container.appendChild(currentController.node);
 
   if (panToOrigin) {
-    requestAnimationFrame(() => currentController.panToWorldX(0));
+    requestAnimationFrame(() => currentController.panToCenter());
   }
 }
 
@@ -54,15 +54,17 @@ async function bootstrap() {
   await loadUserTrees();
   createAndRender();
 
-  initUI({
+  const {setInteractionBlocked} = initUI({
     getUserTrees: () => userTrees,
     refreshUserTrees,
     onAdd: async (name) => {
       const added = await addLandscapeTree(name);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       if (currentController) {
-        currentController.setUserTrees(userTrees);
-        currentController.panToWorldX(0);
+        setInteractionBlocked(true);
+        void currentController.setUserTreesAndGrow(userTrees, added.id).finally(() => {
+          setInteractionBlocked(false);
+        });
       }
     },
     onDelete: async (id) => {

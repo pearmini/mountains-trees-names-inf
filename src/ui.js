@@ -165,18 +165,13 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
         return;
       }
 
-      submit.disabled = true;
-      submit.textContent = "Planting…";
-      error.hidden = true;
+      const name = validation.name;
+      closeModal();
 
       try {
-        await onAdd(validation.name);
-        closeModal();
+        await onAdd(name);
       } catch (err) {
-        error.textContent = err.message ?? "Could not plant your tree. Please try again.";
-        error.hidden = false;
-        submit.disabled = false;
-        submit.textContent = "Plant your tree";
+        openMessageModal("Could not plant", err.message ?? "Please try again.");
       }
     }
 
@@ -263,5 +258,11 @@ export function initUI({onAdd, onDelete, getUserTrees, refreshUserTrees}) {
   plantButton.addEventListener("click", openAddModal);
   myTreesButton.addEventListener("click", openMyTreesModal);
 
-  return {closeModal};
+  function setInteractionBlocked(blocked) {
+    document.body.classList.toggle("interaction-blocked", blocked);
+    plantButton.disabled = blocked;
+    myTreesButton.disabled = blocked;
+  }
+
+  return {closeModal, setInteractionBlocked};
 }

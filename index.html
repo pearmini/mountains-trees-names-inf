@@ -127,6 +127,15 @@
       cursor: wait;
     }
 
+    body.interaction-blocked .github-link {
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    body.interaction-blocked #container {
+      pointer-events: none;
+    }
+
     .toolbar-btn-primary {
       background: var(--ink);
       color: var(--panel);

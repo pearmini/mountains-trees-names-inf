@@ -18,7 +18,7 @@ Inspired by Lingdong Huang's [\{Shan, Shui\}\*](https://github.com/LingDong-/sha
 ## What it does
 
 1. **Generate** — Midpoint-displacement mountains unfold in two depth layers with radial gradients in blue, green, and gold.
-2. **Plant** — Type a name and add your tree to the ridgeline; community trees appear nearest x = 0, newest first. The ITP archive in `names.json` fills the rest of the landscape.
+2. **Plant** — Community trees and the ITP archive in `names.json` merge into one list (community newest first). Index 0 sits at the screen center; higher indices alternate right, left, further right, further left, with stable seeded gaps. Pan forever — the list loops along the ridge.
 3. **Sign** — APack stamps mark authorship on each tree, visible marks of who grew what.
 4. **Explore** — D3 zoom and pan reveal an endless scroll; new terrain loads as you move.
 5. **Return** — Open **My trees** to see and delete trees you planted (shared browser ID with [tree.bairui.dev](https://tree.bairui.dev/)).
@@ -51,7 +51,7 @@ The landscape itself evolved in stages:
 ## How it works
 
 ```
-names.json (ITP Spring Show participants)
+community trees + names.json (merged ranks)
       │
       ▼
 ┌─────────────────────────────────────┐
@@ -61,7 +61,7 @@ names.json (ITP Spring Show participants)
       │
       ▼
 ┌─────────────────────────────────────┐
-│  generateTrees()                    │  place each name on the ridgeline
+│  placeMergedTrees()                 │  center-out slots, seeded gaps, infinite loop
 │  tree.js → Charming.js SVG          │  APack stamp per tree
 └─────────────────────────────────────┘
       │
