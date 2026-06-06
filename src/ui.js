@@ -149,6 +149,7 @@ function createTreeActions({onFocus, onDelete}) {
 }
 
 export function initUI({
+  showMode = false,
   onAdd,
   onDelete,
   onFocusTree,
@@ -159,10 +160,22 @@ export function initUI({
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
 
+  const plantWrap = document.createElement("div");
+  plantWrap.className = "toolbar-plant-wrap";
+
   const plantButton = document.createElement("button");
   plantButton.type = "button";
   plantButton.className = "toolbar-btn toolbar-btn-primary";
   plantButton.textContent = "+ Plant";
+
+  if (showMode) {
+    const plantHint = document.createElement("p");
+    plantHint.className = "toolbar-show-hint";
+    plantHint.textContent = "Tap to plant your name as a tree";
+    plantWrap.append(plantHint, plantButton);
+  } else {
+    plantWrap.appendChild(plantButton);
+  }
 
   const remixWrap = document.createElement("div");
   remixWrap.className = "toolbar-item-with-tooltip";
@@ -180,14 +193,19 @@ export function initUI({
     "Generate a new random landscape. Mountains change; trees stay the same.";
   remixButton.setAttribute("aria-describedby", remixTooltip.id);
 
-  remixWrap.append(remixButton, remixTooltip);
+  if (showMode) {
+    remixTooltip.classList.add("toolbar-show-hint");
+    remixWrap.append(remixTooltip, remixButton);
+  } else {
+    remixWrap.append(remixButton, remixTooltip);
+  }
 
   const myTreesButton = document.createElement("button");
   myTreesButton.type = "button";
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  toolbar.append(plantButton, remixWrap, myTreesButton);
+  toolbar.append(plantWrap, remixWrap, myTreesButton);
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -246,6 +264,9 @@ export function initUI({
       onClose: closeModal,
       getHelpSample: () => input.value,
     });
+    if (showMode) {
+      modal.dialog.classList.add("modal-dialog-plant-show");
+    }
     activeModal = modal;
 
     const privacy = document.createElement("p");
