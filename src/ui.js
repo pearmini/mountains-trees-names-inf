@@ -170,7 +170,7 @@ export function initUI({
 
   if (showMode) {
     const plantHint = document.createElement("p");
-    plantHint.className = "toolbar-plant-hint";
+    plantHint.className = "toolbar-show-hint";
     plantHint.textContent = "Tap to plant your name as a tree";
     plantWrap.append(plantHint, plantButton);
   } else {
@@ -193,7 +193,12 @@ export function initUI({
     "Generate a new random landscape. Mountains change; trees stay the same.";
   remixButton.setAttribute("aria-describedby", remixTooltip.id);
 
-  remixWrap.append(remixButton, remixTooltip);
+  if (showMode) {
+    remixTooltip.classList.add("toolbar-show-hint");
+    remixWrap.append(remixTooltip, remixButton);
+  } else {
+    remixWrap.append(remixButton, remixTooltip);
+  }
 
   const myTreesButton = document.createElement("button");
   myTreesButton.type = "button";

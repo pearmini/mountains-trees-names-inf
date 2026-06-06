@@ -291,7 +291,13 @@
       width: max-content;
     }
 
-    body.show-mode .toolbar-plant-hint {
+    body.show-mode .toolbar-item-with-tooltip {
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    body.show-mode .toolbar-show-hint {
       position: relative;
       font-family: var(--font-serif);
       font-size: 14px;
@@ -309,7 +315,29 @@
       pointer-events: none;
     }
 
-    body.show-mode .toolbar-plant-hint::after {
+    body.show-mode .toolbar-tooltip.toolbar-show-hint {
+      position: absolute;
+      top: auto;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      visibility: hidden;
+      max-width: 280px;
+      line-height: 1.4;
+      text-align: center;
+      white-space: normal;
+      animation: none;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
+    }
+
+    body.show-mode .toolbar-item-with-tooltip:hover .toolbar-tooltip.toolbar-show-hint,
+    body.show-mode .toolbar-item-with-tooltip:focus-within .toolbar-tooltip.toolbar-show-hint {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    body.show-mode .toolbar-show-hint::after {
       content: "";
       position: absolute;
       left: 50%;
@@ -353,11 +381,6 @@
 
     body.show-mode .toolbar-btn-primary:hover:not(:disabled) {
       animation: none;
-    }
-
-    body.show-mode .toolbar-tooltip {
-      top: auto;
-      bottom: calc(100% + 10px);
     }
 
     @keyframes show-mode-plant-pulse {
@@ -413,7 +436,7 @@
         gap: 10px;
       }
 
-      body.show-mode .toolbar-plant-hint {
+      body.show-mode .toolbar-show-hint {
         font-size: 12px;
         white-space: normal;
         text-align: center;
