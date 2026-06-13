@@ -3,7 +3,7 @@ import namesData from "./names.json";
 import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
-import {renderTreePngBlob} from "./lib/treeImageExport.js";
+import {downloadTreePng, downloadTreeSvg, renderTreePngBlob} from "./lib/treeImageExport.js";
 import {uploadTreePng} from "./lib/treeImageUpload.js";
 import {validateName} from "./lib/validateName.js";
 import {createTreePrintQrModal} from "./treePrintQr.js";
@@ -327,14 +327,31 @@ export function initUI({
     submit.textContent = "Plant your tree";
 
     let takeHomeButton = null;
+    let downloadPngButton = null;
+    let downloadSvgButton = null;
+
     if (showMode) {
       takeHomeButton = document.createElement("button");
       takeHomeButton.type = "button";
       takeHomeButton.className = "toolbar-btn toolbar-btn-secondary";
       takeHomeButton.textContent = "Take home";
+    } else {
+      downloadPngButton = document.createElement("button");
+      downloadPngButton.type = "button";
+      downloadPngButton.className = "toolbar-btn toolbar-btn-secondary";
+      downloadPngButton.textContent = "Download PNG";
+
+      downloadSvgButton = document.createElement("button");
+      downloadSvgButton.type = "button";
+      downloadSvgButton.className = "toolbar-btn toolbar-btn-secondary";
+      downloadSvgButton.textContent = "Download SVG";
     }
 
-    actions.append(submit, ...(takeHomeButton ? [takeHomeButton] : []));
+    actions.append(
+      ...(downloadPngButton && downloadSvgButton ? [downloadPngButton, downloadSvgButton] : []),
+      submit,
+      ...(takeHomeButton ? [takeHomeButton] : []),
+    );
     body.append(preview, input, privacy, error, actions);
     modal.dialog.appendChild(body);
     document.body.appendChild(modal.overlay);
@@ -369,6 +386,50 @@ export function initUI({
     input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") handleSubmit();
     });
+
+    async function handleDownload(button, download) {
+      const validation = validateName(input.value);
+      if (!validation.ok) {
+        error.textContent = validation.error;
+        error.hidden = false;
+        return;
+      }
+
+      error.hidden = true;
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "Preparing…";
+
+      try {
+        await download(validation.name);
+      } catch (err) {
+        openMessageModal("Could not download", err.message ?? "Please try again.");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    }
+
+    if (downloadPngButton && downloadSvgButton) {
+      downloadPngButton.addEventListener("click", () =>
+        handleDownload(downloadPngButton, downloadTreePng),
+      );
+      downloadSvgButton.addEventListener("click", () => {
+        const validation = validateName(input.value);
+        if (!validation.ok) {
+          error.textContent = validation.error;
+          error.hidden = false;
+          return;
+        }
+
+        error.hidden = true;
+        try {
+          downloadTreeSvg(validation.name);
+        } catch (err) {
+          openMessageModal("Could not download", err.message ?? "Please try again.");
+        }
+      });
+    }
 
     if (takeHomeButton) {
       takeHomeButton.addEventListener("click", async () => {
