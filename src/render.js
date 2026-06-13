@@ -6,6 +6,10 @@ import {tree} from "./tree.js";
 import namesData from "./names.json";
 import {THEME} from "./theme.js";
 
+const MOBILE_MAX_WIDTH = 640;
+const MOBILE_MAX_SCALE = 0.7;
+const MIN_ZOOM_SCALE = 0.15;
+
 const COLORS = {
   background: (d) => ({
     angle: 90,
@@ -307,7 +311,19 @@ export function render({
 } = {}) {
   let communityTreesData = userTrees;
   const centerX = currentX + width / 2;
-  const state = {startX, endX, translateX, scaleX, currentX, offsetX: 0, x0: 0};
+  const isMobile = width <= MOBILE_MAX_WIDTH;
+  const maxScale = isMobile ? MOBILE_MAX_SCALE : 1;
+  const initialScale = maxScale;
+  const initialTranslateX = width / 2 - centerX * initialScale;
+  const state = {
+    startX,
+    endX,
+    translateX: isMobile ? initialTranslateX : translateX,
+    scaleX: isMobile ? initialScale : scaleX,
+    currentX,
+    offsetX: 0,
+    x0: 0,
+  };
   let centerTreeY = height * 0.75;
   let interactionLocked = false;
   let pendingGrowDbId = null;
@@ -325,12 +341,12 @@ export function render({
   }
 
   function centerTransform() {
-    const k = 1;
+    const k = maxScale;
     const tx = width / 2 - centerX * k;
     return d3.zoomIdentity.translate(tx, 0).scale(k);
   }
 
-  function transformForWorldX(worldX, k = 1) {
+  function transformForWorldX(worldX, k = maxScale) {
     return d3.zoomIdentity.translate(width / 2 - worldX * k, 0).scale(k);
   }
 
@@ -416,10 +432,11 @@ export function render({
     });
 
   const mountainsGroup = transformGroup.append("g").attr("class", "mountains-group");
+  const treesGroup = transformGroup.append("g").attr("class", "trees-group");
 
   const zoomBehavior = d3
     .zoom()
-    .scaleExtent([0.15, 1])
+    .scaleExtent([MIN_ZOOM_SCALE, maxScale])
     .on("zoom", (event) => {
       const {x, k} = event.transform;
       state.scaleX = k;
@@ -429,10 +446,10 @@ export function render({
     });
 
   svg.call(zoomBehavior);
-
-  const treesGroup = transformGroup.append("g").attr("class", "trees-group");
-
-  update();
+  svg.call(
+    zoomBehavior.transform,
+    d3.zoomIdentity.translate(state.translateX, 0).scale(state.scaleX),
+  );
 
   function maybeLoad() {
     const rect = bgRect.node();
@@ -592,7 +609,7 @@ export function render({
     panToTreeAnimated(dbId, duration = 700) {
       const worldX = getWorldXForDbId(dbId);
       if (worldX === null) return Promise.resolve();
-      return panToTransformAnimated(transformForWorldX(worldX, 1), duration);
+      return panToTransformAnimated(transformForWorldX(worldX), duration);
     },
     isInteractionLocked() {
       return interactionLocked;
