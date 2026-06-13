@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.4.21"
+    "vite": "^8.0.16"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.107.0",
+    "@supabase/supabase-js": "^2.108.1",
     "@vercel/analytics": "^2.0.1",
     "apackjs": "0.0.1",
     "bad-words": "^4.0.0",
