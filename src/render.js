@@ -8,6 +8,7 @@ import {THEME} from "./theme.js";
 const MOBILE_MAX_WIDTH = 640;
 const MOBILE_MAX_SCALE = 0.7;
 const MIN_ZOOM_SCALE = 0.15;
+const MAX_DETAIL_ZOOM = 3;
 
 const COLORS = {
   background: (d) => ({
@@ -325,17 +326,31 @@ export function render({
     startX,
     endX,
     translateX: isMobile ? initialTranslateX : translateX,
+    translateY: 0,
     scaleX: isMobile ? initialScale : scaleX,
     currentX,
     offsetX: 0,
     x0: 0,
   };
-  let centerTreeY = height * 0.75;
+
+  const viewportHeight = height * maxScale;
+
+  function resolveTranslateY(ty, k) {
+    const contentHeight = height * k;
+    if (contentHeight <= viewportHeight + 0.001) {
+      return (viewportHeight - contentHeight) / 2;
+    }
+    return Math.max(viewportHeight - contentHeight, Math.min(0, ty));
+  }
+
+  function zoomTransform(tx, ty, k) {
+    return d3.zoomIdentity.translate(tx, resolveTranslateY(ty, k)).scale(k);
+  }
 
   function centerTransform() {
     const k = maxScale;
     const tx = width / 2 - centerX * k;
-    return d3.zoomIdentity.translate(tx, 0).scale(k);
+    return zoomTransform(tx, 0, k);
   }
 
   const line = d3
@@ -352,9 +367,12 @@ export function render({
     .attr("viewBox", `${currentX} 0 ${width} ${height}`)
     .style("cursor", "grab");
 
-  svg.append("defs").attr("id", "gradient-defs");
+  const defs = svg.append("defs").attr("id", "gradient-defs");
+  const clipPath = defs.append("clipPath").attr("id", "landscape-clip");
+  const clipRect = clipPath.append("rect").attr("id", "landscape-clip-rect");
 
-  const transformGroup = svg.append("g").attr("class", "transform-group");
+  const clippedGroup = svg.append("g").attr("clip-path", "url(#landscape-clip)");
+  const transformGroup = clippedGroup.append("g").attr("class", "transform-group");
 
   // This is for get the actual width of the background rect.
   const bgRect = transformGroup
@@ -372,21 +390,27 @@ export function render({
 
   const zoomBehavior = d3
     .zoom()
-    .scaleExtent([MIN_ZOOM_SCALE, maxScale])
+    .scaleExtent([MIN_ZOOM_SCALE, MAX_DETAIL_ZOOM])
     .filter((event) => (!event.ctrlKey || event.type === "wheel") && !event.button)
     .on("zoom", (event) => {
-      const {x, k} = event.transform;
-      state.scaleX = k;
-      state.translateX = x;
+      const {x, y, k} = event.transform;
+      const next = zoomTransform(x, y, k);
+
+      state.scaleX = next.k;
+      state.translateX = next.x;
+      state.translateY = next.y;
+
+      if (next.y !== y || next.x !== x) {
+        zoomBehavior.transform(svg, next);
+        return;
+      }
+
       maybeLoad();
       update();
     });
 
   svg.call(zoomBehavior);
-  svg.call(
-    zoomBehavior.transform,
-    d3.zoomIdentity.translate(state.translateX, 0).scale(state.scaleX),
-  );
+  svg.call(zoomBehavior.transform, zoomTransform(state.translateX, state.translateY, state.scaleX));
 
   function maybeLoad() {
     const rect = bgRect.node();
@@ -397,7 +421,7 @@ export function render({
   }
 
   function update() {
-    const {startX, endX, currentX, translateX, offsetX, scaleX} = state;
+    const {startX, endX, currentX, translateX, translateY, offsetX, scaleX} = state;
     const farMountains = generateMountains({
       startX,
       endX,
@@ -430,14 +454,17 @@ export function render({
       centerRankIndex,
     });
 
-    const centerTree = trees.find((tree) => tree.slot === 0);
-    if (centerTree) centerTreeY = centerTree.y;
+    const viewBoxX = currentX + offsetX;
 
-    const scaledHeight = height * scaleX;
+    svg.attr("viewBox", `${viewBoxX} 0 ${width} ${height}`).attr("height", viewportHeight);
 
-    svg.attr("viewBox", `${currentX + offsetX} 0 ${width} ${scaledHeight}`).attr("height", scaledHeight);
+    clipRect
+      .attr("x", viewBoxX)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", viewportHeight);
 
-    transformGroup.attr("transform", `translate(${translateX}, 0) scale(${scaleX})`);
+    transformGroup.attr("transform", `translate(${translateX}, ${translateY}) scale(${scaleX})`);
 
     bgRect
       .attr("x", startX)
