@@ -188,6 +188,7 @@ export function initUI({
   onFocusRank,
   onRegenerateLandscape,
   getUserTrees,
+  getCommunityTreeCount,
   refreshUserTrees,
 }) {
   const toolbar = document.createElement("div");
@@ -263,7 +264,7 @@ export function initUI({
   }
 
   function totalTreeCount() {
-    return getUserTrees().length + namesData.length;
+    return getCommunityTreeCount() + namesData.length;
   }
 
   function updateTreeCounts() {
