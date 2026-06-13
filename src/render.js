@@ -456,7 +456,7 @@ export function render({
 
     const viewBoxX = currentX + offsetX;
 
-    svg.attr("viewBox", `${viewBoxX} 0 ${width} ${height}`).attr("height", viewportHeight);
+    svg.attr("viewBox", `${viewBoxX} 0 ${width} ${viewportHeight}`).attr("height", viewportHeight);
 
     clipRect
       .attr("x", viewBoxX)
