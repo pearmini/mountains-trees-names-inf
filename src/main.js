@@ -1,4 +1,4 @@
-import {render} from "./render.js";
+import {rankIndexForDbId, render} from "./render.js";
 import {initShowModeQr} from "./showModeQr.js";
 import {initUI} from "./ui.js";
 import {
@@ -38,6 +38,7 @@ let userTrees = [];
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
 let currentSeed = parseSeedFromUrl();
+let centerRankIndex = 0;
 if (currentSeed == null) {
   currentSeed = Date.now() >>> 0;
   syncSeedToUrl(currentSeed);
@@ -45,8 +46,19 @@ if (currentSeed == null) {
 
 function regenerateLandscape() {
   currentSeed = Date.now() >>> 0;
+  centerRankIndex = 0;
   syncSeedToUrl(currentSeed);
   createAndRender({panToOrigin: true});
+}
+
+function focusRank(rankIndex) {
+  if (rankIndex < 0) return;
+  centerRankIndex = rankIndex;
+  createAndRender();
+}
+
+function focusTree(dbId) {
+  focusRank(rankIndexForDbId(userTrees, dbId));
 }
 
 async function loadUserTrees() {
@@ -69,6 +81,7 @@ function createAndRender({panToOrigin = false} = {}) {
     width: window.innerWidth,
     seed: currentSeed,
     userTrees,
+    centerRankIndex,
   });
 
   container.appendChild(currentController.node);
@@ -100,12 +113,7 @@ async function bootstrap() {
       const added = await addLandscapeTree(name);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
-      if (currentController) {
-        setInteractionBlocked(true);
-        void currentController.setUserTreesAndGrow(userTrees, added.id).finally(() => {
-          setInteractionBlocked(false);
-        });
-      }
+      focusTree(added.id);
     },
     onDelete: async (id) => {
       await deleteLandscapeTree(id);
@@ -115,23 +123,11 @@ async function bootstrap() {
         currentController.setUserTrees(userTrees);
       }
     },
-    onFocusTree: async (id) => {
-      if (!currentController) return;
-      setInteractionBlocked(true);
-      try {
-        await currentController.panToTreeAnimated(id);
-      } finally {
-        setInteractionBlocked(false);
-      }
+    onFocusTree: (id) => {
+      focusTree(id);
     },
-    onFocusRank: async (rankIndex) => {
-      if (!currentController) return;
-      setInteractionBlocked(true);
-      try {
-        await currentController.panToRankAnimated(rankIndex);
-      } finally {
-        setInteractionBlocked(false);
-      }
+    onFocusRank: (rankIndex) => {
+      focusRank(rankIndex);
     },
   }));
 }
