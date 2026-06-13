@@ -24,6 +24,18 @@ export async function fetchLandscapeTrees() {
   return (data ?? []).map(rowToTree);
 }
 
+export async function fetchLandscapeTreeCount() {
+  const supabase = getSupabase();
+  if (!supabase) return 0;
+
+  const {count, error} = await supabase
+    .from("landscape_trees")
+    .select("*", {count: "exact", head: true});
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function addLandscapeTree(name) {
   const supabase = getSupabase();
   if (!supabase) {
