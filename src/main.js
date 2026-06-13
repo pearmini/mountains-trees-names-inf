@@ -4,7 +4,6 @@ import {initUI} from "./ui.js";
 import {
   addLandscapeTree,
   deleteLandscapeTree,
-  fetchLandscapeTreeCount,
   fetchLandscapeTrees,
 } from "./lib/landscapeTreesApi.js";
 import {inject} from "@vercel/analytics";
@@ -36,7 +35,6 @@ function syncSeedToUrl(seed) {
 
 let currentController = null;
 let userTrees = [];
-let communityTreeCount = 0;
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
 let currentSeed = parseSeedFromUrl();
@@ -65,16 +63,10 @@ function focusTree(dbId) {
 
 async function loadUserTrees() {
   try {
-    const [trees, count] = await Promise.all([
-      fetchLandscapeTrees(),
-      fetchLandscapeTreeCount(),
-    ]);
-    userTrees = trees;
-    communityTreeCount = count;
+    userTrees = await fetchLandscapeTrees();
   } catch (error) {
     console.error("Failed to load community trees:", error);
     userTrees = [];
-    communityTreeCount = 0;
   }
   return userTrees;
 }
@@ -115,20 +107,18 @@ async function bootstrap() {
   ({setInteractionBlocked, updateTreeCounts} = initUI({
     showMode,
     getUserTrees: () => userTrees,
-    getCommunityTreeCount: () => communityTreeCount,
+    getCommunityTreeCount: () => userTrees.length,
     refreshUserTrees,
     onRegenerateLandscape: regenerateLandscape,
     onAdd: async (name) => {
       const added = await addLandscapeTree(name);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
-      communityTreeCount += 1;
       updateTreeCounts();
       focusTree(added.id);
     },
     onDelete: async (id) => {
       await deleteLandscapeTree(id);
       userTrees = userTrees.filter((tree) => tree.id !== id);
-      communityTreeCount = Math.max(0, communityTreeCount - 1);
       updateTreeCounts();
       if (currentController) {
         currentController.setUserTrees(userTrees);

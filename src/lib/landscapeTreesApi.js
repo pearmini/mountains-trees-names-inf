@@ -11,29 +11,31 @@ function rowToTree(row) {
   };
 }
 
+const PAGE_SIZE = 1000;
+
 export async function fetchLandscapeTrees() {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const {data, error} = await supabase
-    .from("landscape_trees")
-    .select("id, name, browser_id, created_at")
-    .order("created_at", {ascending: false});
+  const trees = [];
+  let from = 0;
 
-  if (error) throw error;
-  return (data ?? []).map(rowToTree);
-}
+  while (true) {
+    const {data, error} = await supabase
+      .from("landscape_trees")
+      .select("id, name, browser_id, created_at")
+      .order("created_at", {ascending: false})
+      .range(from, from + PAGE_SIZE - 1);
 
-export async function fetchLandscapeTreeCount() {
-  const supabase = getSupabase();
-  if (!supabase) return 0;
+    if (error) throw error;
 
-  const {count, error} = await supabase
-    .from("landscape_trees")
-    .select("*", {count: "exact", head: true});
+    const page = data ?? [];
+    trees.push(...page.map(rowToTree));
+    if (page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
 
-  if (error) throw error;
-  return count ?? 0;
+  return trees;
 }
 
 export async function addLandscapeTree(name) {
