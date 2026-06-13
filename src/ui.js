@@ -195,7 +195,7 @@ export function initUI({
   }
 
   const remixWrap = document.createElement("div");
-  remixWrap.className = "toolbar-item-with-tooltip";
+  remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
 
   const remixButton = document.createElement("button");
   remixButton.type = "button";
