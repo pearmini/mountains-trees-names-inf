@@ -124,6 +124,15 @@ async function bootstrap() {
         setInteractionBlocked(false);
       }
     },
+    onFocusRank: async (rankIndex) => {
+      if (!currentController) return;
+      setInteractionBlocked(true);
+      try {
+        await currentController.panToRankAnimated(rankIndex);
+      } finally {
+        setInteractionBlocked(false);
+      }
+    },
   }));
 }
 
