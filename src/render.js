@@ -319,8 +319,9 @@ export function render({
   let communityTreesData = userTrees;
   const centerX = currentX + width / 2;
   const isMobile = width <= MOBILE_MAX_WIDTH;
-  const maxScale = isMobile ? MOBILE_MAX_SCALE : 1;
-  const initialScale = maxScale;
+  const homeScale = isMobile ? MOBILE_MAX_SCALE : 1;
+  const maxZoomScale = homeScale * MAX_DETAIL_ZOOM;
+  const initialScale = homeScale;
   const initialTranslateX = width / 2 - centerX * initialScale;
   const state = {
     startX,
@@ -333,7 +334,7 @@ export function render({
     x0: 0,
   };
 
-  const viewportHeight = height * maxScale;
+  const viewportHeight = height * homeScale;
 
   function resolveTranslateY(ty, k) {
     const contentHeight = height * k;
@@ -348,7 +349,7 @@ export function render({
   }
 
   function centerTransform() {
-    const k = maxScale;
+    const k = homeScale;
     const tx = width / 2 - centerX * k;
     return zoomTransform(tx, 0, k);
   }
@@ -368,8 +369,12 @@ export function render({
     .style("cursor", "grab");
 
   const defs = svg.append("defs").attr("id", "gradient-defs");
-  const clipPath = defs.append("clipPath").attr("id", "landscape-clip");
-  const clipRect = clipPath.append("rect").attr("id", "landscape-clip-rect");
+  const clipRect = defs
+    .append("clipPath")
+    .attr("id", "landscape-clip")
+    .attr("clipPathUnits", "userSpaceOnUse")
+    .append("rect")
+    .attr("id", "landscape-clip-rect");
 
   const clippedGroup = svg.append("g").attr("clip-path", "url(#landscape-clip)");
   const transformGroup = clippedGroup.append("g").attr("class", "transform-group");
@@ -390,7 +395,7 @@ export function render({
 
   const zoomBehavior = d3
     .zoom()
-    .scaleExtent([MIN_ZOOM_SCALE, MAX_DETAIL_ZOOM])
+    .scaleExtent([MIN_ZOOM_SCALE, maxZoomScale])
     .filter((event) => (!event.ctrlKey || event.type === "wheel") && !event.button)
     .on("zoom", (event) => {
       const {x, y, k} = event.transform;
