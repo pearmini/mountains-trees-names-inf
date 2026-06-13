@@ -143,6 +143,21 @@ function createTreeActionButton({className, label, icon, onClick}) {
   return button;
 }
 
+function createTreeFocusAction({onFocus}) {
+  const actions = document.createElement("div");
+  actions.className = "my-tree-actions";
+  actions.append(
+    createTreeActionButton({
+      className: "my-tree-focus",
+      label: "Focus on tree",
+      icon:
+        '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>',
+      onClick: onFocus,
+    }),
+  );
+  return actions;
+}
+
 function createTreeActions({onFocus, onDelete}) {
   const actions = document.createElement("div");
   actions.className = "my-tree-actions";
@@ -170,6 +185,7 @@ export function initUI({
   onAdd,
   onDelete,
   onFocusTree,
+  onFocusRank,
   onRegenerateLandscape,
   getUserTrees,
   refreshUserTrees,
@@ -222,7 +238,15 @@ export function initUI({
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  toolbar.append(plantWrap, remixWrap, myTreesButton);
+  let searchButton = null;
+  if (import.meta.env.DEV) {
+    searchButton = document.createElement("button");
+    searchButton.type = "button";
+    searchButton.className = "toolbar-btn toolbar-btn-secondary toolbar-btn-dev";
+    searchButton.textContent = "Search";
+  }
+
+  toolbar.append(plantWrap, remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -538,9 +562,132 @@ export function initUI({
     body.appendChild(grid);
   }
 
+  function buildSearchCatalog() {
+    const communityCount = getUserTrees().length;
+    const community = getUserTrees().map((entry) => ({
+      key: `community-${entry.id}`,
+      name: entry.name,
+      source: "community",
+      dbId: entry.id,
+      createdAt: entry.createdAt,
+    }));
+    const archive = namesData.map((entry, index) => ({
+      key: `archive-${index}`,
+      name: entry.name,
+      source: "archive",
+      rankIndex: communityCount + index,
+    }));
+    return [...community, ...archive];
+  }
+
+  function formatSearchMeta(entry) {
+    if (entry.source === "community" && entry.createdAt) {
+      const date = new Date(entry.createdAt);
+      if (!Number.isNaN(date.getTime())) {
+        return `Planted ${date.toLocaleDateString()}`;
+      }
+    }
+    return entry.source === "community" ? "Community" : "Archive";
+  }
+
+  function renderSearchResults(container, query) {
+    container.innerHTML = "";
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      const hint = document.createElement("p");
+      hint.className = "modal-message search-hint";
+      hint.textContent = "Type a name to search community and archive trees.";
+      container.appendChild(hint);
+      return;
+    }
+
+    const matches = buildSearchCatalog()
+      .filter((entry) => entry.name.toLowerCase().includes(q))
+      .slice(0, 40);
+
+    if (matches.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "modal-message";
+      empty.textContent = `No trees match “${query.trim()}”.`;
+      container.appendChild(empty);
+      return;
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "my-trees-grid search-trees-grid";
+
+    for (const entry of matches) {
+      const cell = document.createElement("div");
+      cell.className = "my-tree-cell";
+
+      const thumb = document.createElement("div");
+      thumb.className = "my-tree-thumb";
+      renderTreePreview(thumb, entry.name, THUMB_OPTIONS);
+
+      const label = document.createElement("p");
+      label.className = "my-tree-label";
+      label.textContent = entry.name;
+
+      const meta = document.createElement("p");
+      meta.className = "search-tree-meta";
+      meta.textContent = formatSearchMeta(entry);
+
+      cell.append(
+        thumb,
+        label,
+        meta,
+        createTreeFocusAction({
+          onFocus: () => {
+            closeModal();
+            if (entry.dbId) {
+              void onFocusTree(entry.dbId);
+            } else {
+              void onFocusRank?.(entry.rankIndex);
+            }
+          },
+        }),
+      );
+      grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+  }
+
+  function openSearchModal() {
+    closeModal();
+
+    const modal = createModal({title: "Search trees (dev)", onClose: closeModal});
+    modal.dialog.classList.add("modal-dialog-search");
+    activeModal = modal;
+
+    const body = document.createElement("div");
+    body.className = "modal-body search-trees-body";
+
+    const input = document.createElement("input");
+    input.type = "search";
+    input.className = "modal-input search-trees-input";
+    input.placeholder = "Search by name…";
+    input.autocomplete = "off";
+
+    const results = document.createElement("div");
+    results.className = "search-trees-results";
+
+    body.append(input, results);
+    modal.dialog.appendChild(body);
+    document.body.appendChild(modal.overlay);
+
+    renderSearchResults(results, input.value);
+    input.focus();
+
+    input.addEventListener("input", () => {
+      renderSearchResults(results, input.value);
+    });
+  }
+
   plantButton.addEventListener("click", openAddModal);
   remixButton.addEventListener("click", () => onRegenerateLandscape?.());
   myTreesButton.addEventListener("click", openMyTreesModal);
+  searchButton?.addEventListener("click", openSearchModal);
   updateTreeCounts();
 
   function setInteractionBlocked(blocked) {
@@ -548,6 +695,7 @@ export function initUI({
     plantButton.disabled = blocked;
     remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
+    if (searchButton) searchButton.disabled = blocked;
   }
 
   return {closeModal, setInteractionBlocked, updateTreeCounts};

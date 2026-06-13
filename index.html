@@ -1057,6 +1057,55 @@
       background: var(--ink);
       color: var(--panel);
     }
+
+    .toolbar-btn-dev {
+      font-style: italic;
+    }
+
+    .modal-group:has(.modal-dialog-search) {
+      width: min(960px, calc(100vw - 40px));
+    }
+
+    .modal-dialog-search {
+      width: 100%;
+    }
+
+    .search-trees-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .search-trees-input {
+      width: 100%;
+    }
+
+    .search-trees-results {
+      min-height: 120px;
+    }
+
+    .search-trees-grid {
+      flex-wrap: wrap;
+      max-height: min(60vh, 520px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .search-tree-meta {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin: 0;
+      padding: 0 10px 8px;
+      background: var(--panel);
+      opacity: 0.7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-hint {
+      margin: 0;
+    }
   </style>
   <body>
     <a

@@ -360,10 +360,9 @@ export function render({
     );
   }
 
-  function getWorldXForDbId(dbId) {
+  function getWorldXForRank(rankIndex) {
     const ranks = buildMergedRanks(communityTreesData);
-    const rankIndex = ranks.findIndex((rank) => rank.dbId === dbId);
-    if (rankIndex < 0) return null;
+    if (rankIndex < 0 || rankIndex >= ranks.length) return null;
 
     const slotX = createSlotX(seed, centerX);
     const viewCenterX = (width / 2 - state.translateX) / state.scaleX;
@@ -386,6 +385,13 @@ export function render({
     }
 
     return slotX(bestSlot);
+  }
+
+  function getWorldXForDbId(dbId) {
+    const ranks = buildMergedRanks(communityTreesData);
+    const rankIndex = ranks.findIndex((rank) => rank.dbId === dbId);
+    if (rankIndex < 0) return null;
+    return getWorldXForRank(rankIndex);
   }
 
   function panToTransformAnimated(target, duration = 700) {
@@ -608,6 +614,11 @@ export function render({
     },
     panToTreeAnimated(dbId, duration = 700) {
       const worldX = getWorldXForDbId(dbId);
+      if (worldX === null) return Promise.resolve();
+      return panToTransformAnimated(transformForWorldX(worldX), duration);
+    },
+    panToRankAnimated(rankIndex, duration = 700) {
+      const worldX = getWorldXForRank(rankIndex);
       if (worldX === null) return Promise.resolve();
       return panToTransformAnimated(transformForWorldX(worldX), duration);
     },
