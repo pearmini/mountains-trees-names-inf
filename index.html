@@ -508,23 +508,74 @@
         height: 64px;
       }
 
-      body.show-mode .modal-group:has(.modal-dialog-plant-show) {
+      .modal-overlay:has(.modal-dialog-plant) {
+        padding: 12px;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        align-items: flex-start;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .modal-group:has(.modal-dialog-plant) {
         width: min(100%, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+        margin: auto 0;
       }
 
-      body.show-mode .modal-dialog-plant-show .modal-title {
-        font-size: 19px;
+      .modal-dialog-plant .modal-header {
+        padding: 12px 14px 0;
       }
 
-      body.show-mode .modal-dialog-plant-show .modal-input {
+      .modal-dialog-plant .modal-body {
+        padding: 12px 14px 16px;
+      }
+
+      .modal-dialog-plant .modal-preview {
+        width: min(100%, 220px);
+        margin-inline: auto;
+        margin-bottom: 10px;
+      }
+
+      .modal-dialog-plant .modal-input {
         font-size: 16px;
-        padding: 12px 14px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
       }
 
-      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-dialog-plant-show,
-      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-help-dialog {
+      .modal-dialog-plant .modal-privacy {
+        font-size: 11px;
+        line-height: 1.4;
+        margin-bottom: 10px;
+      }
+
+      .modal-dialog-plant .modal-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .modal-dialog-plant .modal-actions .toolbar-btn-primary {
+        grid-column: 1 / -1;
+      }
+
+      .modal-dialog-plant .modal-actions .toolbar-btn:nth-child(2):last-child {
+        grid-column: 1 / -1;
+      }
+
+      .modal-dialog-plant .modal-actions .toolbar-btn {
+        font-size: 13px;
+        padding: 10px 12px;
         width: 100%;
-        flex: 1 1 auto;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 640px) and (max-height: 740px) {
+      .modal-dialog-plant .modal-preview,
+      body.show-mode .modal-dialog-plant-show .modal-preview {
+        width: min(100%, 180px);
       }
     }
 
@@ -556,7 +607,7 @@
 
     .modal-dialog {
       width: 100%;
-      max-height: 90vh;
+      max-height: min(90vh, 90dvh);
       overflow: auto;
       background: var(--panel);
       border: 1.5px solid var(--ink);
@@ -956,6 +1007,55 @@
 
     body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-help-dialog {
       width: 420px;
+    }
+
+    @media (max-width: 640px) {
+      .modal-dialog.modal-dialog-plant {
+        max-height: none;
+      }
+
+      body.show-mode .modal-group:has(.modal-dialog-plant-show) {
+        width: min(100%, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+      }
+
+      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-dialog-plant-show,
+      body.show-mode .modal-group-with-help:has(.modal-dialog-plant-show) .modal-help-dialog {
+        width: 100%;
+        flex: 1 1 auto;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-header {
+        padding: 12px 14px 0;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-title {
+        font-size: 19px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-body {
+        padding: 12px 14px 16px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-preview {
+        margin-bottom: 10px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-input {
+        font-size: 16px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-privacy {
+        font-size: 12px;
+        margin-bottom: 10px;
+      }
+
+      body.show-mode .modal-dialog-plant-show .modal-actions .toolbar-btn {
+        font-size: 15px;
+        padding: 12px 16px;
+      }
     }
 
     .modal-group:has(.modal-dialog-my-trees) {

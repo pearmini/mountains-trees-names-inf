@@ -329,6 +329,7 @@ export function initUI({
       onClose: closeModal,
       getHelpSample: () => input.value,
     });
+    modal.dialog.classList.add("modal-dialog-plant");
     if (showMode) {
       modal.dialog.classList.add("modal-dialog-plant-show");
     }
