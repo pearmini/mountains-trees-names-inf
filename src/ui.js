@@ -241,12 +241,15 @@ export function initUI({
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  const searchButton = document.createElement("button");
-  searchButton.type = "button";
-  searchButton.className = "toolbar-btn toolbar-btn-secondary";
-  searchButton.textContent = "Search";
+  let searchButton = null;
+  if (import.meta.env.DEV) {
+    searchButton = document.createElement("button");
+    searchButton.type = "button";
+    searchButton.className = "toolbar-btn toolbar-btn-secondary";
+    searchButton.textContent = "Search";
+  }
 
-  toolbar.append(plantWrap, remixWrap, myTreesButton, searchButton);
+  toolbar.append(plantWrap, remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -696,7 +699,7 @@ export function initUI({
     plantButton.disabled = blocked;
     remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
-    searchButton.disabled = blocked;
+    if (searchButton) searchButton.disabled = blocked;
   }
 
   return {closeModal, setInteractionBlocked, updateTreeCounts};
