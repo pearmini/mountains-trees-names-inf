@@ -239,15 +239,12 @@ export function initUI({
   myTreesButton.className = "toolbar-btn toolbar-btn-secondary";
   myTreesButton.textContent = "My trees";
 
-  let searchButton = null;
-  if (import.meta.env.DEV) {
-    searchButton = document.createElement("button");
-    searchButton.type = "button";
-    searchButton.className = "toolbar-btn toolbar-btn-secondary toolbar-btn-dev";
-    searchButton.textContent = "Search";
-  }
+  const searchButton = document.createElement("button");
+  searchButton.type = "button";
+  searchButton.className = "toolbar-btn toolbar-btn-secondary";
+  searchButton.textContent = "Search";
 
-  toolbar.append(plantWrap, remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
+  toolbar.append(plantWrap, remixWrap, myTreesButton, searchButton);
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -658,7 +655,7 @@ export function initUI({
   function openSearchModal() {
     closeModal();
 
-    const modal = createModal({title: "Search trees (dev)", onClose: closeModal});
+    const modal = createModal({title: "Search trees", onClose: closeModal});
     modal.dialog.classList.add("modal-dialog-search");
     activeModal = modal;
 
@@ -697,7 +694,7 @@ export function initUI({
     plantButton.disabled = blocked;
     remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
-    if (searchButton) searchButton.disabled = blocked;
+    searchButton.disabled = blocked;
   }
 
   return {closeModal, setInteractionBlocked, updateTreeCounts};
