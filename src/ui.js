@@ -84,7 +84,8 @@ function createModal({title, onClose, getHelpSample}) {
   closeButton.textContent = "×";
   closeButton.addEventListener("click", onClose);
 
-  headerActions.append(...(helpButton ? [helpButton] : []), closeButton);
+  if (helpButton) headerActions.append(helpButton);
+  headerActions.append(closeButton);
   header.append(heading, headerActions);
   dialog.appendChild(header);
   group.appendChild(dialog);
