@@ -68,12 +68,14 @@ function createModal({title, onClose, getHelpSample}) {
   const headerActions = document.createElement("div");
   headerActions.className = "modal-header-actions";
 
-  const helpButton = document.createElement("button");
-  helpButton.type = "button";
-  helpButton.className = "modal-help";
-  helpButton.setAttribute("aria-label", "How it works");
-  helpButton.setAttribute("aria-pressed", "false");
-  helpButton.textContent = "?";
+  const helpButton = getHelpSample ? document.createElement("button") : null;
+  if (helpButton) {
+    helpButton.type = "button";
+    helpButton.className = "modal-help";
+    helpButton.setAttribute("aria-label", "How it works");
+    helpButton.setAttribute("aria-pressed", "false");
+    helpButton.textContent = "?";
+  }
 
   const closeButton = document.createElement("button");
   closeButton.type = "button";
@@ -82,7 +84,7 @@ function createModal({title, onClose, getHelpSample}) {
   closeButton.textContent = "×";
   closeButton.addEventListener("click", onClose);
 
-  headerActions.append(helpButton, closeButton);
+  headerActions.append(...(helpButton ? [helpButton] : []), closeButton);
   header.append(heading, headerActions);
   dialog.appendChild(header);
   group.appendChild(dialog);
@@ -93,7 +95,7 @@ function createModal({title, onClose, getHelpSample}) {
     helpPanel.remove();
     helpPanel = null;
     group.classList.remove("modal-group-with-help");
-    helpButton.setAttribute("aria-pressed", "false");
+    helpButton?.setAttribute("aria-pressed", "false");
   }
 
   function openHelp() {
@@ -104,10 +106,10 @@ function createModal({title, onClose, getHelpSample}) {
     });
     group.classList.add("modal-group-with-help");
     group.appendChild(helpPanel);
-    helpButton.setAttribute("aria-pressed", "true");
+    helpButton?.setAttribute("aria-pressed", "true");
   }
 
-  helpButton.addEventListener("click", (event) => {
+  helpButton?.addEventListener("click", (event) => {
     event.stopPropagation();
     if (helpPanel) closeHelp();
     else openHelp();
@@ -243,7 +245,7 @@ export function initUI({
   if (import.meta.env.DEV) {
     searchButton = document.createElement("button");
     searchButton.type = "button";
-    searchButton.className = "toolbar-btn toolbar-btn-secondary toolbar-btn-dev";
+    searchButton.className = "toolbar-btn toolbar-btn-secondary";
     searchButton.textContent = "Search";
   }
 
@@ -658,7 +660,7 @@ export function initUI({
   function openSearchModal() {
     closeModal();
 
-    const modal = createModal({title: "Search trees (dev)", onClose: closeModal});
+    const modal = createModal({title: "Search trees", onClose: closeModal});
     modal.dialog.classList.add("modal-dialog-search");
     activeModal = modal;
 

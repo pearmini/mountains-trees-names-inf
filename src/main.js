@@ -1,4 +1,5 @@
 import {rankIndexForDbId, render} from "./render.js";
+import {prepareTreeForGrow, animateTreeGrow} from "./animateTree.js";
 import {initShowModeQr} from "./showModeQr.js";
 import {initUI} from "./ui.js";
 import {
@@ -115,6 +116,11 @@ async function bootstrap() {
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
       focusTree(added.id);
+      const groupEl = currentController.node.querySelector(`[data-db-id="${added.id}"]`);
+      if (groupEl) {
+        prepareTreeForGrow(groupEl);
+        animateTreeGrow(groupEl);
+      }
     },
     onDelete: async (id) => {
       await deleteLandscapeTree(id);

@@ -499,6 +499,7 @@ export function render({
       .enter()
       .append("g")
       .attr("class", "tree-group")
+      .attr("data-db-id", (d) => d.dbId ?? null)
       .each(function (d) {
         const group = this;
         const treeSvg = tree(d.name, {
