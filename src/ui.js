@@ -223,27 +223,25 @@ export function initUI({
     toolbar.appendChild(plantWrap);
   }
 
-  const remixWrap = document.createElement("div");
-  remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
+  let remixButton = null;
+  if (!showMode) {
+    const remixWrap = document.createElement("div");
+    remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
 
-  const remixButton = document.createElement("button");
-  remixButton.type = "button";
-  remixButton.className = "toolbar-btn toolbar-btn-secondary";
-  remixButton.textContent = "Remix";
+    remixButton = document.createElement("button");
+    remixButton.type = "button";
+    remixButton.className = "toolbar-btn toolbar-btn-secondary";
+    remixButton.textContent = "Remix";
 
-  const remixTooltip = document.createElement("div");
-  remixTooltip.className = "toolbar-tooltip";
-  remixTooltip.id = "remix-tooltip";
-  remixTooltip.setAttribute("role", "tooltip");
-  remixTooltip.textContent =
-    "Generate a new random landscape. Mountains change; trees stay the same.";
-  remixButton.setAttribute("aria-describedby", remixTooltip.id);
-
-  if (showMode) {
-    remixTooltip.classList.add("toolbar-show-hint");
-    remixWrap.append(remixTooltip, remixButton);
-  } else {
+    const remixTooltip = document.createElement("div");
+    remixTooltip.className = "toolbar-tooltip";
+    remixTooltip.id = "remix-tooltip";
+    remixTooltip.setAttribute("role", "tooltip");
+    remixTooltip.textContent =
+      "Generate a new random landscape. Mountains change; trees stay the same.";
+    remixButton.setAttribute("aria-describedby", remixTooltip.id);
     remixWrap.append(remixButton, remixTooltip);
+    toolbar.appendChild(remixWrap);
   }
 
   const myTreesButton = document.createElement("button");
@@ -252,14 +250,14 @@ export function initUI({
   myTreesButton.textContent = "My trees";
 
   let searchButton = null;
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && !showMode) {
     searchButton = document.createElement("button");
     searchButton.type = "button";
     searchButton.className = "toolbar-btn toolbar-btn-secondary";
     searchButton.textContent = "Search";
   }
 
-  toolbar.append(remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
+  toolbar.append(myTreesButton, ...(searchButton ? [searchButton] : []));
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -712,7 +710,7 @@ export function initUI({
   }
 
   plantButton?.addEventListener("click", openAddModal);
-  remixButton.addEventListener("click", () => onRegenerateLandscape?.());
+  remixButton?.addEventListener("click", () => onRegenerateLandscape?.());
   myTreesButton.addEventListener("click", openMyTreesModal);
   searchButton?.addEventListener("click", openSearchModal);
   updateTreeCounts();
@@ -720,7 +718,7 @@ export function initUI({
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
     if (plantButton) plantButton.disabled = blocked;
-    remixButton.disabled = blocked;
+    if (remixButton) remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
     if (searchButton) searchButton.disabled = blocked;
   }

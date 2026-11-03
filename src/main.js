@@ -87,6 +87,7 @@ function createAndRender({panToOrigin = false} = {}) {
     userTrees,
     centerRankIndex,
     includeArchive,
+    onceEach: showMode,
   });
 
   container.appendChild(currentController.node);

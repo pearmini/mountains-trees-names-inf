@@ -283,6 +283,7 @@ function placeMergedTrees({
   centerX,
   centerRankIndex = 0,
   includeArchive = true,
+  onceEach = false,
 }) {
   const ranks = buildMergedRanks(userTrees, {includeArchive});
   if (ranks.length === 0) return [];
@@ -291,8 +292,9 @@ function placeMergedTrees({
   const scaleWidth = createTreeScaler();
   const slots = slotsInRange(startX, endX, seed, centerX);
   const n = ranks.length;
+  const placedSlots = onceEach ? slots.filter((slot) => slot < n) : slots;
 
-  return slots
+  return placedSlots
     .map((slot) => {
       const rank = ranks[((centerRankIndex + slot) % n + n) % n];
       return placeTreeOnMountain({
@@ -328,9 +330,11 @@ export function render({
   userTrees = [],
   centerRankIndex = 0,
   includeArchive = true,
+  onceEach = false,
 } = {}) {
   let communityTreesData = userTrees;
   const showArchive = includeArchive;
+  const placeOnce = onceEach;
   const centerX = currentX + width / 2;
   const isMobile = width <= MOBILE_MAX_WIDTH;
   const homeScale = isMobile ? MOBILE_MAX_SCALE : 1;
@@ -472,6 +476,7 @@ export function render({
       centerX,
       centerRankIndex,
       includeArchive: showArchive,
+      onceEach: placeOnce,
     });
 
     const viewBoxX = currentX + offsetX;
