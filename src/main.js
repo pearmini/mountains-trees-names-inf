@@ -39,6 +39,9 @@ function syncSeedToUrl(seed) {
 
 let currentController = null;
 let userTrees = [];
+let uistTrees = [];
+let publicTrees = null;
+let forestView = "uist";
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
 let currentSeed = parseSeedFromUrl();
@@ -61,18 +64,48 @@ function focusRank(rankIndex) {
   createAndRender();
 }
 
+function viewingPublicForest() {
+  return showMode && forestView === "public";
+}
+
+function viewTrees() {
+  if (viewingPublicForest()) return publicTrees ?? [];
+  if (showMode) return uistTrees;
+  return userTrees;
+}
+
+function viewArchive() {
+  return viewingPublicForest() ? true : includeArchive;
+}
+
 function focusTree(dbId) {
-  focusRank(rankIndexForDbId(userTrees, dbId, {includeArchive}));
+  focusRank(rankIndexForDbId(viewTrees(), dbId, {includeArchive: viewArchive()}));
 }
 
 async function loadUserTrees() {
   try {
-    userTrees = await fetchLandscapeTrees(landscape);
+    if (showMode) {
+      uistTrees = await fetchLandscapeTrees("uist");
+      userTrees = uistTrees;
+    } else {
+      userTrees = await fetchLandscapeTrees(landscape);
+    }
   } catch (error) {
     console.error("Failed to load community trees:", error);
+    if (showMode) uistTrees = [];
     userTrees = [];
   }
   return userTrees;
+}
+
+async function showForest(view) {
+  if (!showMode || view === forestView) return;
+  if (view === "public" && !publicTrees) {
+    publicTrees = await fetchLandscapeTrees("all");
+  }
+  forestView = view;
+  centerRankIndex = 0;
+  createAndRender({panToOrigin: true});
 }
 
 function createAndRender({panToOrigin = false} = {}) {
@@ -84,9 +117,9 @@ function createAndRender({panToOrigin = false} = {}) {
   currentController = render({
     width: window.innerWidth,
     seed: currentSeed,
-    userTrees,
+    userTrees: viewTrees(),
     centerRankIndex,
-    includeArchive,
+    includeArchive: viewArchive(),
     onceEach: showMode,
   });
 
@@ -99,8 +132,8 @@ function createAndRender({panToOrigin = false} = {}) {
 
 async function refreshUserTrees() {
   await loadUserTrees();
-  if (currentController) {
-    currentController.setUserTrees(userTrees);
+  if (currentController && !viewingPublicForest()) {
+    currentController.setUserTrees(viewTrees());
   }
   updateTreeCounts();
   return userTrees;
@@ -117,9 +150,18 @@ async function bootstrap() {
     getCommunityTreeCount: () => userTrees.length,
     refreshUserTrees,
     onRegenerateLandscape: regenerateLandscape,
+    onForestView: showForest,
     onAdd: async (name) => {
-      const added = await addLandscapeTree(name, landscape);
-      userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
+      if (showMode && forestView !== "uist") return;
+      const target = showMode ? "uist" : landscape;
+      const added = await addLandscapeTree(name, target);
+      const next = [added, ...viewTrees().filter((tree) => tree.id !== added.id)];
+      if (showMode) {
+        uistTrees = next;
+        userTrees = uistTrees;
+      } else {
+        userTrees = next;
+      }
       updateTreeCounts();
       focusTree(added.id);
       const groupEl = currentController.node.querySelector(`[data-db-id="${added.id}"]`);
@@ -129,11 +171,19 @@ async function bootstrap() {
       }
     },
     onDelete: async (id) => {
-      await deleteLandscapeTree(id, landscape);
-      userTrees = userTrees.filter((tree) => tree.id !== id);
+      if (showMode && forestView !== "uist") return;
+      const target = showMode ? "uist" : landscape;
+      await deleteLandscapeTree(id, target);
+      const next = viewTrees().filter((tree) => tree.id !== id);
+      if (showMode) {
+        uistTrees = next;
+        userTrees = uistTrees;
+      } else {
+        userTrees = next;
+      }
       updateTreeCounts();
       if (currentController) {
-        currentController.setUserTrees(userTrees);
+        currentController.setUserTrees(viewTrees());
       }
     },
     onFocusTree: (id) => {

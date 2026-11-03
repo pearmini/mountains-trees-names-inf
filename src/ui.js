@@ -192,6 +192,7 @@ export function initUI({
   onFocusTree,
   onFocusRank,
   onRegenerateLandscape,
+  onForestView,
   getUserTrees,
   getCommunityTreeCount,
   refreshUserTrees,
@@ -221,6 +222,61 @@ export function initUI({
     }
 
     toolbar.appendChild(plantWrap);
+  }
+
+  let showingPublic = false;
+
+  if (showMode && plantButton) {
+    const forestSwitch = document.createElement("div");
+    forestSwitch.className = "forest-switch";
+    forestSwitch.setAttribute("role", "group");
+    forestSwitch.setAttribute("aria-label", "Forest");
+
+    const uistButton = document.createElement("button");
+    uistButton.type = "button";
+    uistButton.className = "toolbar-btn forest-switch-btn";
+    uistButton.textContent = "UIST";
+
+    const publicButton = document.createElement("button");
+    publicButton.type = "button";
+    publicButton.className = "toolbar-btn forest-switch-btn";
+    publicButton.textContent = "Public";
+
+    function paintForestSwitch() {
+      const selected = showingPublic ? publicButton : uistButton;
+      for (const button of [uistButton, publicButton]) {
+        const isSelected = button === selected;
+        button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        button.classList.toggle("toolbar-btn-primary", isSelected);
+        button.classList.toggle("toolbar-btn-secondary", !isSelected);
+      }
+      plantButton.disabled = showingPublic;
+    }
+
+    async function selectForest(nextPublic) {
+      if (nextPublic === showingPublic || publicButton.disabled) return;
+      const label = publicButton.textContent;
+      if (nextPublic) {
+        publicButton.disabled = true;
+        publicButton.textContent = "Loading…";
+      }
+      try {
+        await onForestView?.(nextPublic ? "public" : "uist");
+        showingPublic = nextPublic;
+      } catch (error) {
+        console.error("Failed to switch forest:", error);
+      } finally {
+        publicButton.disabled = false;
+        publicButton.textContent = label === "Loading…" ? "Public" : label;
+        paintForestSwitch();
+      }
+    }
+
+    uistButton.addEventListener("click", () => selectForest(false));
+    publicButton.addEventListener("click", () => selectForest(true));
+    forestSwitch.append(uistButton, publicButton);
+    paintForestSwitch();
+    toolbar.appendChild(forestSwitch);
   }
 
   let remixButton = null;
@@ -886,7 +942,7 @@ export function initUI({
 
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
-    if (plantButton) plantButton.disabled = blocked;
+    if (plantButton) plantButton.disabled = blocked || showingPublic;
     if (remixButton) remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
     if (searchButton) searchButton.disabled = blocked;
