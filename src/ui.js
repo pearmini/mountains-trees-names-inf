@@ -257,8 +257,29 @@ export function initUI({
     searchButton.textContent = "Search";
   }
 
+  const fullscreenButton = document.createElement("button");
+  fullscreenButton.type = "button";
+  fullscreenButton.className = "fullscreen-button";
+  fullscreenButton.setAttribute("aria-label", "Fullscreen");
+  fullscreenButton.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  const syncFullscreenButton = () => {
+    fullscreenButton.hidden = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+  };
+
+  fullscreenButton.addEventListener("click", () => {
+    const root = document.documentElement;
+    const request = root.requestFullscreen?.bind(root) || root.webkitRequestFullscreen?.bind(root);
+    if (request) request();
+  });
+
+  document.addEventListener("fullscreenchange", syncFullscreenButton);
+  document.addEventListener("webkitfullscreenchange", syncFullscreenButton);
+  syncFullscreenButton();
+
   toolbar.append(myTreesButton, ...(searchButton ? [searchButton] : []));
-  document.body.appendChild(toolbar);
+  document.body.append(fullscreenButton, toolbar);
 
   const totalTreesEl = document.createElement("p");
   totalTreesEl.className = "tree-count";
@@ -322,10 +343,112 @@ export function initUI({
     document.body.appendChild(printQrModal.overlay);
   }
 
+  function openPlantStage() {
+    const stage = document.createElement("div");
+    stage.className = "plant-stage";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "plant-stage-close";
+    closeButton.setAttribute("aria-label", "Close");
+    closeButton.textContent = "×";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "plant-stage-input";
+    input.placeholder = "Type your name or nickname...";
+    input.maxLength = 80;
+    input.autocomplete = "off";
+    input.setAttribute("aria-label", "Name");
+
+    const error = document.createElement("p");
+    error.className = "plant-stage-error";
+    error.hidden = true;
+
+    const preview = document.createElement("div");
+    preview.className = "plant-stage-tree";
+
+    const submit = document.createElement("button");
+    submit.type = "button";
+    submit.className = "toolbar-btn toolbar-btn-primary plant-stage-submit";
+    submit.textContent = "Plant";
+
+    stage.append(closeButton, input, error, preview, submit);
+    document.body.appendChild(stage);
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeModal();
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    activeModal = {
+      destroy() {
+        document.removeEventListener("keydown", onKeyDown);
+        stage.remove();
+      },
+    };
+
+    const previewOptions = {
+      ...PREVIEW_OPTIONS,
+      number: true,
+      line: true,
+      stamp: true,
+      end: false,
+      padding: 20,
+      width: 480,
+      height: 480,
+      stampCellSize: 80,
+      background: "#f7f3ec",
+      dotFill: "black",
+      stampInk: "black",
+    };
+
+    function paint() {
+      renderTreePreview(preview, input.value, previewOptions);
+    }
+
+    async function handleSubmit() {
+      const validation = validateName(input.value);
+      if (!validation.ok) {
+        error.textContent = validation.error;
+        error.hidden = false;
+        return;
+      }
+
+      submit.disabled = true;
+      const name = validation.name;
+      closeModal();
+
+      try {
+        await onAdd(name);
+      } catch (err) {
+        openMessageModal("Could not plant", err.message ?? "Please try again.");
+      }
+    }
+
+    closeButton.addEventListener("click", closeModal);
+    submit.addEventListener("click", handleSubmit);
+    input.addEventListener("input", () => {
+      error.hidden = true;
+      paint();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") handleSubmit();
+    });
+
+    paint();
+    input.focus();
+  }
+
   function openAddModal() {
     closeModal();
     if (!isSupabaseConfigured()) {
       openMessageModal("Not connected", "Planting is not available yet. Please try again later.");
+      return;
+    }
+
+    if (showMode) {
+      openPlantStage();
       return;
     }
 
@@ -721,6 +844,7 @@ export function initUI({
     if (remixButton) remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
     if (searchButton) searchButton.disabled = blocked;
+    fullscreenButton.disabled = blocked;
   }
 
   return {closeModal, setInteractionBlocked, updateTreeCounts};

@@ -117,6 +117,9 @@ export function tree(
     end = true,
     strokeWidth = 1.5,
     stampCellSize = 50,
+    background = THEME.background,
+    dotFill = background,
+    stampInk = "red",
   } = {}
 ) {
   text = text.trim();
@@ -262,16 +265,18 @@ export function tree(
 
     const start = end ? width - totalLength : width / 2 + padding;
     const sw = 1.5;
+    const stampText =
+      stampInk === "black"
+        ? apack.text(text, {cellSize, word: {strokeWidth: sw}})
+        : apack.text(text, {
+            cellSize,
+            word: {strokeWidth: sw, stroke: "red"},
+            background: {strokeWidth: sw * 2, stroke: "red"},
+          });
     textNode = cm.svg("g", {
       "data-tree-part": "name",
       transform: `translate(${start}, ${baselineY - cellSize - 5})`,
-      children: [
-        apack.text(text, {
-          cellSize,
-          word: {strokeWidth: sw, stroke: "red"},
-          background: {strokeWidth: sw * 2, stroke: "red"},
-        }),
-      ],
+      children: [stampText],
     });
   } catch (e) {
     longMessage = true;
@@ -339,7 +344,7 @@ export function tree(
             transform: `translate(0, ${-initLen * 0.618})`,
             children: [
               rose(12, 1, i + 2, {
-                fill: THEME.background,
+                fill: background,
                 stroke: "black",
                 "data-tree-part": "flower",
               }),
@@ -367,9 +372,9 @@ export function tree(
             [
               cm.svg("path", {
                 d: circlePath(d.r),
-                fill: THEME.background,
+                fill: dotFill,
                 stroke: "black",
-                "data-tree-part": "flower",
+                "data-tree-part": "dot",
                 "data-depth": (d) => d.depth,
               }),
             ].filter(Boolean),
@@ -379,7 +384,7 @@ export function tree(
           transform: (d) => d.transform,
           children: (d) => [
             rose(d.r, d.n, d.d, {
-              fill: THEME.background,
+              fill: background,
               stroke: "black",
               "data-tree-part": "flower",
               "data-depth": (d) => d.depth,
