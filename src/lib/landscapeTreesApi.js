@@ -1,4 +1,5 @@
 import {getBrowserId} from "./browserId.js";
+import {storageLandscapeId} from "./landscapeMode.js";
 import {getSupabase, isSupabaseConfigured} from "./supabase.js";
 
 function rowToTree(row) {
@@ -13,7 +14,10 @@ function rowToTree(row) {
 
 const PAGE_SIZE = 1000;
 
-export async function fetchLandscapeTrees() {
+export async function fetchLandscapeTrees(landscape) {
+  const landscapeId = storageLandscapeId(landscape);
+  if (!landscapeId) return [];
+
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -24,6 +28,7 @@ export async function fetchLandscapeTrees() {
     const {data, error} = await supabase
       .from("landscape_trees")
       .select("id, name, browser_id, created_at")
+      .eq("landscape_id", landscapeId)
       .order("created_at", {ascending: false})
       .range(from, from + PAGE_SIZE - 1);
 
@@ -38,7 +43,12 @@ export async function fetchLandscapeTrees() {
   return trees;
 }
 
-export async function addLandscapeTree(name) {
+export async function addLandscapeTree(name, landscape) {
+  const landscapeId = storageLandscapeId(landscape);
+  if (!landscapeId) {
+    throw new Error("This landscape does not accept new trees.");
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     throw new Error("Landscape is not connected yet. Please try again later.");
@@ -46,7 +56,7 @@ export async function addLandscapeTree(name) {
 
   const {data, error} = await supabase
     .from("landscape_trees")
-    .insert({name: name.trim(), browser_id: getBrowserId()})
+    .insert({name: name.trim(), browser_id: getBrowserId(), landscape_id: landscapeId})
     .select("id, name, browser_id, created_at")
     .single();
 
@@ -54,13 +64,22 @@ export async function addLandscapeTree(name) {
   return rowToTree(data);
 }
 
-export async function deleteLandscapeTree(id) {
+export async function deleteLandscapeTree(id, landscape) {
+  const landscapeId = storageLandscapeId(landscape);
+  if (!landscapeId) {
+    throw new Error("This landscape does not store planted trees.");
+  }
+
   const supabase = getSupabase();
   if (!supabase) {
     throw new Error("Landscape is not connected yet. Please try again later.");
   }
 
-  const {error} = await supabase.from("landscape_trees").delete().eq("id", id);
+  const {error} = await supabase
+    .from("landscape_trees")
+    .delete()
+    .eq("id", id)
+    .eq("landscape_id", landscapeId);
   if (error) throw error;
 }
 
