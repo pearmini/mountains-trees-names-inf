@@ -2,6 +2,7 @@ import {rankIndexForDbId, render} from "./render.js";
 import {prepareTreeForGrow, animateTreeGrow} from "./animateTree.js";
 import {initShowModeQr} from "./showModeQr.js";
 import {initUI} from "./ui.js";
+import {landscapeIncludesArchive, parseLandscape} from "./lib/landscapeMode.js";
 import {
   addLandscapeTree,
   deleteLandscapeTree,
@@ -11,6 +12,8 @@ import {inject} from "@vercel/analytics";
 
 const urlParams = new URLSearchParams(window.location.search);
 const showMode = urlParams.get("show") === "true";
+const landscape = parseLandscape(urlParams.get("landscape"));
+const includeArchive = landscapeIncludesArchive(landscape);
 
 if (showMode) {
   document.body.classList.add("show-mode");
@@ -59,12 +62,12 @@ function focusRank(rankIndex) {
 }
 
 function focusTree(dbId) {
-  focusRank(rankIndexForDbId(userTrees, dbId));
+  focusRank(rankIndexForDbId(userTrees, dbId, {includeArchive}));
 }
 
 async function loadUserTrees() {
   try {
-    userTrees = await fetchLandscapeTrees();
+    userTrees = await fetchLandscapeTrees(landscape);
   } catch (error) {
     console.error("Failed to load community trees:", error);
     userTrees = [];
@@ -83,6 +86,7 @@ function createAndRender({panToOrigin = false} = {}) {
     seed: currentSeed,
     userTrees,
     centerRankIndex,
+    includeArchive,
   });
 
   container.appendChild(currentController.node);
@@ -107,12 +111,13 @@ async function bootstrap() {
 
   ({setInteractionBlocked, updateTreeCounts} = initUI({
     showMode,
+    landscape,
     getUserTrees: () => userTrees,
     getCommunityTreeCount: () => userTrees.length,
     refreshUserTrees,
     onRegenerateLandscape: regenerateLandscape,
     onAdd: async (name) => {
-      const added = await addLandscapeTree(name);
+      const added = await addLandscapeTree(name, landscape);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
       focusTree(added.id);
@@ -123,7 +128,7 @@ async function bootstrap() {
       }
     },
     onDelete: async (id) => {
-      await deleteLandscapeTree(id);
+      await deleteLandscapeTree(id, landscape);
       userTrees = userTrees.filter((tree) => tree.id !== id);
       updateTreeCounts();
       if (currentController) {

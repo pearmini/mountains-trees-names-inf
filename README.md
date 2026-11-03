@@ -112,11 +112,24 @@ pnpm preview   # preview production build
 
 Append `?show=true` for fullscreen kiosk mode (hides footer links, adds a fullscreen button).
 
+`landscape` chooses which trees sit on the ridge. A missing or unknown value is `all`, so the public site stays the current forest.
+
+- `?landscape=all` — community trees plus the ITP archive. New plants join the community list.
+- `?landscape=community` — community trees only. New plants join that same list.
+- `?landscape=itp` — the ITP archive only. Plant is hidden.
+- `?landscape=uist` — a separate forest that starts empty. New plants stay on this URL.
+
+UIST booth, with the mountain seed pinned so every screen shares one terrain:
+
+`/?landscape=uist&show=true&seed=20261103`
+
+The Visit QR copies that URL, so a phone joins the same mountains and the same forest.
+
 ### Supabase setup (community planting)
 
 Uses the same Supabase project as [tree.bairui.dev](https://tree.bairui.dev/) (`bairui-studio`). Browser IDs are shared via `name2tree_browser_id` in `localStorage`, so trees you plant here and in the forest app belong to the same visitor identity.
 
-1. Run [`supabase/landscape_trees.sql`](supabase/landscape_trees.sql) in the Supabase SQL Editor.
+1. For a new database, run [`supabase/landscape_trees.sql`](supabase/landscape_trees.sql) in the Supabase SQL Editor. If the table already exists, run [`supabase/migrations/20261103120000_landscape_id.sql`](supabase/migrations/20261103120000_landscape_id.sql) before using the landscape URLs. Existing rows stay on `main`.
 2. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` and on Vercel.
 
 ## Project structure
@@ -136,11 +149,13 @@ infinite-landscape/
 │   ├── main.js     # Mount, resize, kiosk mode
 │   └── lib/
 │       ├── browserId.js        # Shared visitor ID with Name2Tree
+│       ├── landscapeMode.js    # all / community / itp / uist
 │       ├── supabase.js         # Client + browser ID header
 │       ├── validateName.js     # Profanity and input checks
 │       └── landscapeTreesApi.js
 ├── supabase/
-│   └── landscape_trees.sql     # Schema + RLS
+│   ├── landscape_trees.sql     # Schema + RLS
+│   └── migrations/20261103120000_landscape_id.sql
 ├── img/            # Screenshots and documentation images
 └── index.html
 ```
