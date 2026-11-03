@@ -1,6 +1,3 @@
-const LITTERBOX_UPLOAD = "https://litterbox.catbox.moe/resources/internals/api.php";
-const LITTERBOX_EXPIRY = "24h";
-
 function slugify(name) {
   return (
     name
@@ -12,24 +9,23 @@ function slugify(name) {
 }
 
 export async function uploadTreePng(blob, name) {
-  const form = new FormData();
-  form.append("reqtype", "fileupload");
-  form.append("time", LITTERBOX_EXPIRY);
-  form.append("fileToUpload", blob, `${slugify(name)}-${Date.now()}.png`);
-
-  const response = await fetch(LITTERBOX_UPLOAD, {
+  const filename = `${slugify(name)}-${Date.now()}.png`;
+  const response = await fetch("/api/upload-tree", {
     method: "POST",
-    body: form,
+    headers: {
+      "content-type": blob.type || "image/png",
+      "x-filename": filename,
+    },
+    body: blob,
   });
 
+  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`Upload failed (${response.status})`);
+    throw new Error(payload.error ?? `Upload failed (${response.status})`);
   }
-
-  const url = (await response.text()).trim();
-  if (!url.startsWith("http")) {
+  if (typeof payload.url !== "string" || !payload.url.startsWith("http")) {
     throw new Error("Unexpected response from upload service.");
   }
 
-  return url;
+  return payload.url;
 }

@@ -10,6 +10,7 @@ const EXPORT_OPTIONS = {
 };
 const PAPER = "#f6d87b";
 const EXPORT_SIZE = 480;
+const EXPORT_PIXEL_SCALE = 2;
 
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -33,9 +34,9 @@ function canvasToBlob(canvas) {
   return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/png", 1));
 }
 
-export function createTreeSvg(name, size = EXPORT_SIZE) {
+export function createTreeSvg(name, size = EXPORT_SIZE, {paper = PAPER, ...treeOptions} = {}) {
   const text = name.trim() || "Name To Tree";
-  const node = tree(text, {...EXPORT_OPTIONS, width: size, height: size}).render();
+  const node = tree(text, {...EXPORT_OPTIONS, ...treeOptions, width: size, height: size}).render();
   node.setAttribute("viewBox", `0 0 ${size} ${size}`);
 
   const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -43,27 +44,29 @@ export function createTreeSvg(name, size = EXPORT_SIZE) {
   background.setAttribute("y", "0");
   background.setAttribute("width", String(size));
   background.setAttribute("height", String(size));
-  background.setAttribute("fill", PAPER);
+  background.setAttribute("fill", paper);
   node.insertBefore(background, node.firstChild);
 
   return node;
 }
 
-export async function renderTreePngBlob(name, size = EXPORT_SIZE) {
-  const svg = createTreeSvg(name, size);
+export async function renderTreePngBlob(name, size = EXPORT_SIZE, options = {}) {
+  const paper = options.paper ?? PAPER;
+  const pixelSize = size * EXPORT_PIXEL_SCALE;
+  const svg = createTreeSvg(name, size, options);
+  svg.setAttribute("width", String(pixelSize));
+  svg.setAttribute("height", String(pixelSize));
   const serialized = new XMLSerializer().serializeToString(svg);
   const svgBlob = new Blob([serialized], {type: "image/svg+xml;charset=utf-8"});
   const dataUrl = await blobToDataUrl(svgBlob);
   const image = await loadImage(dataUrl);
-  const dpr = window.devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
-  canvas.width = image.width * dpr;
-  canvas.height = image.height * dpr;
+  canvas.width = pixelSize;
+  canvas.height = pixelSize;
   const context = canvas.getContext("2d");
-  context.scale(dpr, dpr);
-  context.fillStyle = PAPER;
-  context.fillRect(0, 0, image.width, image.height);
-  context.drawImage(image, 0, 0, image.width, image.height);
+  context.fillStyle = paper;
+  context.fillRect(0, 0, pixelSize, pixelSize);
+  context.drawImage(image, 0, 0, pixelSize, pixelSize);
   return canvasToBlob(canvas);
 }
 

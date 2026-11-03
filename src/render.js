@@ -180,7 +180,7 @@ function createTreeScaler() {
   return d3.scaleSqrt().domain([TREE_MIN_Y, TREE_MAX_Y]).range([200, 400]);
 }
 
-function buildMergedRanks(userTrees) {
+function buildMergedRanks(userTrees, {includeArchive = true} = {}) {
   const community = [...userTrees].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
@@ -193,6 +193,8 @@ function buildMergedRanks(userTrees) {
     browserId: entry.browserId,
     createdAt: entry.createdAt,
   }));
+
+  if (!includeArchive) return communityRanks;
 
   const archiveRanks = namesData.map((entry, index) => ({
     name: entry.name,
@@ -271,16 +273,28 @@ function placeTreeOnMountain({x, name, id, height, mountains, scaleWidth, source
   };
 }
 
-function placeMergedTrees({userTrees, startX, endX, seed, height, mountains, centerX, centerRankIndex = 0}) {
-  const ranks = buildMergedRanks(userTrees);
+function placeMergedTrees({
+  userTrees,
+  startX,
+  endX,
+  seed,
+  height,
+  mountains,
+  centerX,
+  centerRankIndex = 0,
+  includeArchive = true,
+  onceEach = false,
+}) {
+  const ranks = buildMergedRanks(userTrees, {includeArchive});
   if (ranks.length === 0) return [];
 
   const slotX = createSlotX(seed, centerX);
   const scaleWidth = createTreeScaler();
   const slots = slotsInRange(startX, endX, seed, centerX);
   const n = ranks.length;
+  const placedSlots = onceEach ? slots.filter((slot) => slot < n) : slots;
 
-  return slots
+  return placedSlots
     .map((slot) => {
       const rank = ranks[((centerRankIndex + slot) % n + n) % n];
       return placeTreeOnMountain({
@@ -299,8 +313,8 @@ function placeMergedTrees({userTrees, startX, endX, seed, height, mountains, cen
     .filter(Boolean);
 }
 
-export function rankIndexForDbId(userTrees, dbId) {
-  const ranks = buildMergedRanks(userTrees);
+export function rankIndexForDbId(userTrees, dbId, {includeArchive = true} = {}) {
+  const ranks = buildMergedRanks(userTrees, {includeArchive});
   return ranks.findIndex((rank) => rank.dbId === dbId);
 }
 
@@ -315,8 +329,12 @@ export function render({
   seed = 10000,
   userTrees = [],
   centerRankIndex = 0,
+  includeArchive = true,
+  onceEach = false,
 } = {}) {
   let communityTreesData = userTrees;
+  const showArchive = includeArchive;
+  const placeOnce = onceEach;
   const centerX = currentX + width / 2;
   const isMobile = width <= MOBILE_MAX_WIDTH;
   const homeScale = isMobile ? MOBILE_MAX_SCALE : 1;
@@ -457,6 +475,8 @@ export function render({
       mountains: closeMountains,
       centerX,
       centerRankIndex,
+      includeArchive: showArchive,
+      onceEach: placeOnce,
     });
 
     const viewBoxX = currentX + offsetX;

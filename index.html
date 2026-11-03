@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{Mountains, Trees, Names}*</title>
+    <title>Finding Trees in Names</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -113,10 +113,36 @@
       fill: currentColor;
     }
 
-    .toolbar {
+    .fullscreen-button {
       position: fixed;
       top: 16px;
       left: 16px;
+      z-index: 220;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fullscreen-button[hidden] {
+      display: none;
+    }
+
+    .fullscreen-button svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 16px;
+      left: 60px;
       z-index: 200;
       display: flex;
       gap: 8px;
@@ -266,23 +292,41 @@
       font-family: var(--font-serif);
       font-size: 16px;
       line-height: 1.5;
-      margin: 0 0 12px;
+      margin: 0 0 6px;
       opacity: 0.88;
     }
 
-    .show-mode-interaction {
+    .show-mode-credit {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin: 0;
+      opacity: 0.62;
+      letter-spacing: 0.02em;
+    }
+
+    .show-mode-instruction {
       font-family: var(--font-mono);
       font-size: 13px;
       margin: 0;
       opacity: 0.72;
       letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    body.show-mode .show-mode-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      flex: 0 0 auto;
+      margin: 40px 0 0;
     }
 
     body.show-mode .toolbar {
       position: static;
       transform: none;
       flex: 0 0 auto;
-      margin: 40px 0 0;
+      margin: 0;
       gap: 14px;
       align-items: flex-end;
       flex-wrap: nowrap;
@@ -376,11 +420,25 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
     }
 
-    body.show-mode .toolbar-btn-primary {
+    body.show-mode .toolbar-plant-wrap .toolbar-btn-primary:not(:disabled) {
       animation: show-mode-plant-pulse 2.4s ease-in-out infinite;
     }
 
-    body.show-mode .toolbar-btn-primary:hover:not(:disabled) {
+    body.show-mode .forest-switch {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    @media (max-width: 1100px) {
+      body.show-mode .show-mode-controls {
+        box-sizing: border-box;
+        width: 100%;
+        padding-right: 230px;
+      }
+    }
+
+    body.show-mode .toolbar-plant-wrap .toolbar-btn-primary:hover:not(:disabled) {
       animation: none;
     }
 
@@ -440,6 +498,7 @@
       display: block;
       width: 80px;
       height: 80px;
+      object-fit: contain;
     }
 
     .show-mode-qr-label {
@@ -474,14 +533,22 @@
         font-size: 15px;
       }
 
-      .show-mode-interaction {
+      .show-mode-credit {
+        font-size: 11px;
+      }
+
+      .show-mode-instruction {
         font-size: 12px;
+      }
+
+      body.show-mode .show-mode-controls {
+        margin-top: 32px;
+        gap: 10px;
       }
 
       body.show-mode .toolbar {
         flex-wrap: wrap;
         justify-content: center;
-        margin-top: 32px;
         gap: 10px;
       }
 
@@ -906,46 +973,23 @@
     }
 
     .modal-overlay-print-qr {
-      z-index: 1100;
+      z-index: 1300;
     }
 
     .modal-group-print-qr {
-      width: min(420px, calc(100vw - 40px));
+      width: min(292px, calc(100vw - 40px));
     }
 
     .modal-body-print-qr {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding-top: 8px;
-    }
-
-    .tree-print-qr-wrap {
-      padding: 16px;
-      border-radius: 12px;
-      border: 1.5px solid var(--ink);
-      background: var(--paper);
-      margin-bottom: 16px;
+      justify-content: center;
+      padding: 12px 18px 18px;
     }
 
     .tree-print-qr-code {
       display: block;
       width: 240px;
       height: 240px;
-    }
-
-    .tree-print-qr-message {
-      padding: 0;
-      margin: 0 0 14px;
-      max-width: 34ch;
-    }
-
-    .tree-print-qr-link {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--ink);
-      opacity: 0.8;
     }
 
     body.show-mode .modal-group:has(.modal-dialog-plant-show) {
@@ -1056,6 +1100,83 @@
         font-size: 15px;
         padding: 12px 16px;
       }
+    }
+
+    .plant-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      background: var(--app-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 72px 24px 48px;
+    }
+
+    .plant-stage-close {
+      position: absolute;
+      top: max(18px, env(safe-area-inset-top));
+      right: max(22px, env(safe-area-inset-right));
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 36px;
+      line-height: 1;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+
+    .plant-stage-input {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      color: var(--ink);
+      text-align: center;
+      width: min(420px, 78vw);
+      padding: 8px 4px 10px;
+      border: none;
+      border-bottom: 1px solid rgba(26, 26, 26, 0.45);
+      background: transparent;
+      outline: none;
+    }
+
+    .plant-stage-input::placeholder {
+      color: rgba(26, 26, 26, 0.45);
+    }
+
+    .plant-stage-error {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--error);
+      margin: 0;
+      min-height: 1.2em;
+      text-align: center;
+    }
+
+    .plant-stage-error[hidden] {
+      display: none;
+    }
+
+    .plant-stage-tree {
+      width: min(80vmin, calc(100vw - 48px), calc(100vh - 240px));
+      height: min(80vmin, calc(100vw - 48px), calc(100vh - 240px));
+      margin-top: -8vmin;
+    }
+
+    .toolbar-btn[hidden] {
+      display: none;
+    }
+
+    .plant-stage-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .plant-stage-tree svg {
+      overflow: visible;
     }
 
     .modal-group:has(.modal-dialog-my-trees) {
@@ -1222,18 +1343,13 @@
       </svg>
     </a>
     <div class="content">
-      <h1 class="title">{Mountains, Trees, Names}*</h1>
-      <p class="description">
-        Pan and zoom a procedurally generated infinite landscape. Every name becomes a
-        <a href="https://tree.bairui.dev" target="_blank" rel="noopener noreferrer">tree</a>.
-      </p>
+      <h1 class="title">Finding Trees in Names</h1>
+      <p class="description">Planting Personal Data into a Procedurally Generated Infinite Collective Landscape</p>
     </div>
     <header class="show-mode-header">
-      <h1 class="show-mode-title">{Mountains, Trees, Names}*</h1>
-      <p class="show-mode-desc">
-        An infinite procedural landscape. Every name becomes a tree.
-      </p>
-      <p class="show-mode-interaction">Drag to pan · Scroll or pinch to zoom</p>
+      <h1 class="show-mode-title">Finding Trees in Names</h1>
+      <p class="show-mode-desc">Planting Personal Data into a Procedurally Generated Infinite Collective Landscape</p>
+      <p class="show-mode-credit">Bairui Su, Chloe Yan, NYU ITP · UIST 2026 Demo</p>
     </header>
     <div id="container"></div>
     <script type="module" src="/src/main.js"></script>

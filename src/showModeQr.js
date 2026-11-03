@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 
-const INSTAGRAM_URL = "https://www.instagram.com/subairui24/";
+const BAIRUI_URL = "https://bairui.dev/";
 const QR_OPTIONS = {
   margin: 1,
   width: 80,
@@ -39,10 +39,10 @@ function createQrItem({label, url}) {
 export function initShowModeQr() {
   const panel = document.createElement("aside");
   panel.className = "show-mode-qr-panel";
-  panel.setAttribute("aria-label", "Scan to visit or follow");
+  panel.setAttribute("aria-label", "Scan to visit or find Bairui Su");
   panel.append(
     createQrItem({label: "Visit", url: getSiteUrl()}),
-    createQrItem({label: "Instagram", url: INSTAGRAM_URL}),
+    createQrItem({label: "Bairui Su", url: BAIRUI_URL}),
   );
   document.body.appendChild(panel);
 }

@@ -2,6 +2,7 @@ import {tree} from "./tree.js";
 import namesData from "./names.json";
 import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
+import {canPlant, landscapeIncludesArchive} from "./lib/landscapeMode.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
 import {downloadTreePng, downloadTreeSvg, renderTreePngBlob} from "./lib/treeImageExport.js";
 import {uploadTreePng} from "./lib/treeImageUpload.js";
@@ -185,11 +186,13 @@ function createTreeActions({onFocus, onDelete}) {
 
 export function initUI({
   showMode = false,
+  landscape = "all",
   onAdd,
   onDelete,
   onFocusTree,
   onFocusRank,
   onRegenerateLandscape,
+  onForestView,
   getUserTrees,
   getCommunityTreeCount,
   refreshUserTrees,
@@ -197,44 +200,104 @@ export function initUI({
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
 
-  const plantWrap = document.createElement("div");
-  plantWrap.className = "toolbar-plant-wrap";
+  const allowPlant = canPlant(landscape);
+  let plantButton = null;
 
-  const plantButton = document.createElement("button");
-  plantButton.type = "button";
-  plantButton.className = "toolbar-btn toolbar-btn-primary";
-  plantButton.textContent = "+ Plant";
+  if (allowPlant) {
+    const plantWrap = document.createElement("div");
+    plantWrap.className = "toolbar-plant-wrap";
 
-  if (showMode) {
-    const plantHint = document.createElement("p");
-    plantHint.className = "toolbar-show-hint";
-    plantHint.textContent = "Tap to plant your name as a tree";
-    plantWrap.append(plantHint, plantButton);
-  } else {
-    plantWrap.appendChild(plantButton);
+    plantButton = document.createElement("button");
+    plantButton.type = "button";
+    plantButton.className = "toolbar-btn toolbar-btn-primary";
+    plantButton.textContent = "+ Plant";
+
+    if (showMode) {
+      const plantHint = document.createElement("p");
+      plantHint.className = "toolbar-show-hint";
+      plantHint.textContent = "Tap to plant your name as a tree";
+      plantWrap.append(plantHint, plantButton);
+    } else {
+      plantWrap.appendChild(plantButton);
+    }
+
+    toolbar.appendChild(plantWrap);
   }
 
-  const remixWrap = document.createElement("div");
-  remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
+  let showingPublic = false;
 
-  const remixButton = document.createElement("button");
-  remixButton.type = "button";
-  remixButton.className = "toolbar-btn toolbar-btn-secondary";
-  remixButton.textContent = "Remix";
+  if (showMode && plantButton) {
+    const forestSwitch = document.createElement("div");
+    forestSwitch.className = "forest-switch";
+    forestSwitch.setAttribute("role", "group");
+    forestSwitch.setAttribute("aria-label", "Forest");
 
-  const remixTooltip = document.createElement("div");
-  remixTooltip.className = "toolbar-tooltip";
-  remixTooltip.id = "remix-tooltip";
-  remixTooltip.setAttribute("role", "tooltip");
-  remixTooltip.textContent =
-    "Generate a new random landscape. Mountains change; trees stay the same.";
-  remixButton.setAttribute("aria-describedby", remixTooltip.id);
+    const uistButton = document.createElement("button");
+    uistButton.type = "button";
+    uistButton.className = "toolbar-btn forest-switch-btn";
+    uistButton.textContent = "UIST";
 
-  if (showMode) {
-    remixTooltip.classList.add("toolbar-show-hint");
-    remixWrap.append(remixTooltip, remixButton);
-  } else {
+    const publicButton = document.createElement("button");
+    publicButton.type = "button";
+    publicButton.className = "toolbar-btn forest-switch-btn";
+    publicButton.textContent = "Public";
+
+    function paintForestSwitch() {
+      const selected = showingPublic ? publicButton : uistButton;
+      for (const button of [uistButton, publicButton]) {
+        const isSelected = button === selected;
+        button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        button.classList.toggle("toolbar-btn-primary", isSelected);
+        button.classList.toggle("toolbar-btn-secondary", !isSelected);
+      }
+      plantButton.disabled = showingPublic;
+    }
+
+    async function selectForest(nextPublic) {
+      if (nextPublic === showingPublic || publicButton.disabled) return;
+      const label = publicButton.textContent;
+      if (nextPublic) {
+        publicButton.disabled = true;
+        publicButton.textContent = "Loading…";
+      }
+      try {
+        await onForestView?.(nextPublic ? "public" : "uist");
+        showingPublic = nextPublic;
+      } catch (error) {
+        console.error("Failed to switch forest:", error);
+      } finally {
+        publicButton.disabled = false;
+        publicButton.textContent = label === "Loading…" ? "Public" : label;
+        paintForestSwitch();
+      }
+    }
+
+    uistButton.addEventListener("click", () => selectForest(false));
+    publicButton.addEventListener("click", () => selectForest(true));
+    forestSwitch.append(uistButton, publicButton);
+    paintForestSwitch();
+    toolbar.appendChild(forestSwitch);
+  }
+
+  let remixButton = null;
+  if (!showMode) {
+    const remixWrap = document.createElement("div");
+    remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
+
+    remixButton = document.createElement("button");
+    remixButton.type = "button";
+    remixButton.className = "toolbar-btn toolbar-btn-secondary";
+    remixButton.textContent = "Remix";
+
+    const remixTooltip = document.createElement("div");
+    remixTooltip.className = "toolbar-tooltip";
+    remixTooltip.id = "remix-tooltip";
+    remixTooltip.setAttribute("role", "tooltip");
+    remixTooltip.textContent =
+      "Generate a new random landscape. Mountains change; trees stay the same.";
+    remixButton.setAttribute("aria-describedby", remixTooltip.id);
     remixWrap.append(remixButton, remixTooltip);
+    toolbar.appendChild(remixWrap);
   }
 
   const myTreesButton = document.createElement("button");
@@ -243,15 +306,48 @@ export function initUI({
   myTreesButton.textContent = "My trees";
 
   let searchButton = null;
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && !showMode) {
     searchButton = document.createElement("button");
     searchButton.type = "button";
     searchButton.className = "toolbar-btn toolbar-btn-secondary";
     searchButton.textContent = "Search";
   }
 
-  toolbar.append(plantWrap, remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
-  document.body.appendChild(toolbar);
+  const fullscreenButton = document.createElement("button");
+  fullscreenButton.type = "button";
+  fullscreenButton.className = "fullscreen-button";
+  fullscreenButton.setAttribute("aria-label", "Fullscreen");
+  fullscreenButton.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  const syncFullscreenButton = () => {
+    fullscreenButton.hidden = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+  };
+
+  fullscreenButton.addEventListener("click", () => {
+    const root = document.documentElement;
+    const request = root.requestFullscreen?.bind(root) || root.webkitRequestFullscreen?.bind(root);
+    if (request) request();
+  });
+
+  document.addEventListener("fullscreenchange", syncFullscreenButton);
+  document.addEventListener("webkitfullscreenchange", syncFullscreenButton);
+  syncFullscreenButton();
+
+  if (!showMode) toolbar.append(myTreesButton);
+  if (searchButton) toolbar.append(searchButton);
+
+  if (showMode) {
+    const controls = document.createElement("div");
+    controls.className = "show-mode-controls";
+    const instruction = document.createElement("p");
+    instruction.className = "show-mode-instruction";
+    instruction.textContent = "Drag to pan · Scroll or pinch to zoom";
+    controls.append(instruction, toolbar);
+    document.body.append(fullscreenButton, controls);
+  } else {
+    document.body.append(fullscreenButton, toolbar);
+  }
 
   const totalTreesEl = document.createElement("p");
   totalTreesEl.className = "tree-count";
@@ -267,12 +363,20 @@ export function initUI({
   }
 
   function totalTreeCount() {
-    return getCommunityTreeCount() + namesData.length;
+    const planted = getCommunityTreeCount();
+    const archive = landscapeIncludesArchive(landscape) ? namesData.length : 0;
+    return planted + archive;
   }
 
   function updateTreeCounts() {
     myTreesButton.textContent = myTreesLabel();
-    totalTreesEl.textContent = `${totalTreeCount().toLocaleString()} trees in the landscape`;
+    const total = totalTreeCount();
+    if (landscape === "uist" && total === 0) {
+      totalTreesEl.textContent = "This landscape is empty and ready to plant.";
+      return;
+    }
+    const noun = total === 1 ? "tree" : "trees";
+    totalTreesEl.textContent = `${total.toLocaleString()} ${noun} in the landscape`;
   }
 
   let activeModal = null;
@@ -293,10 +397,10 @@ export function initUI({
     }
   }
 
-  async function openTreePrintQr(name) {
+  async function openTreePrintQr(name, exportOptions) {
     closePrintQrModal();
 
-    const pngBlob = await renderTreePngBlob(name);
+    const pngBlob = await renderTreePngBlob(name, undefined, exportOptions);
     const imageUrl = await uploadTreePng(pngBlob, name);
 
     printQrModal = createTreePrintQrModal({
@@ -307,10 +411,146 @@ export function initUI({
     document.body.appendChild(printQrModal.overlay);
   }
 
+  function openPlantStage() {
+    const stage = document.createElement("div");
+    stage.className = "plant-stage";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.className = "plant-stage-close";
+    closeButton.setAttribute("aria-label", "Close");
+    closeButton.textContent = "×";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "plant-stage-input";
+    input.placeholder = "Type your name or nickname...";
+    input.maxLength = 80;
+    input.autocomplete = "off";
+    input.setAttribute("aria-label", "Name");
+
+    const error = document.createElement("p");
+    error.className = "plant-stage-error";
+    error.hidden = true;
+
+    const preview = document.createElement("div");
+    preview.className = "plant-stage-tree";
+
+    const actions = document.createElement("div");
+    actions.className = "plant-stage-actions";
+
+    const submit = document.createElement("button");
+    submit.type = "button";
+    submit.className = "toolbar-btn toolbar-btn-primary plant-stage-submit";
+    submit.textContent = "Plant";
+
+    const download = document.createElement("button");
+    download.type = "button";
+    download.className = "toolbar-btn toolbar-btn-secondary plant-stage-submit";
+    download.textContent = "Download / Print";
+
+    actions.append(submit, download);
+    stage.append(closeButton, input, error, preview, actions);
+    document.body.appendChild(stage);
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") closeModal();
+    };
+    document.addEventListener("keydown", onKeyDown);
+
+    activeModal = {
+      destroy() {
+        document.removeEventListener("keydown", onKeyDown);
+        stage.remove();
+      },
+    };
+
+    const previewOptions = {
+      ...PREVIEW_OPTIONS,
+      number: true,
+      line: true,
+      stamp: true,
+      end: false,
+      padding: 20,
+      width: 480,
+      height: 480,
+      stampCellSize: 80,
+      background: "#f7f3ec",
+      dotFill: "black",
+      stampInk: "black",
+    };
+
+    function paint() {
+      renderTreePreview(preview, input.value, previewOptions);
+    }
+
+    async function handleSubmit() {
+      const validation = validateName(input.value);
+      if (!validation.ok) {
+        error.textContent = validation.error;
+        error.hidden = false;
+        return;
+      }
+
+      submit.disabled = true;
+      const name = validation.name;
+      closeModal();
+
+      try {
+        await onAdd(name);
+      } catch (err) {
+        openMessageModal("Could not plant", err.message ?? "Please try again.");
+      }
+    }
+
+    async function handleDownload() {
+      const validation = validateName(input.value);
+      if (!validation.ok) {
+        error.textContent = validation.error;
+        error.hidden = false;
+        return;
+      }
+
+      error.hidden = true;
+      const originalLabel = download.textContent;
+      download.disabled = true;
+      download.textContent = "Preparing…";
+
+      try {
+        await openTreePrintQr(validation.name, {...previewOptions, paper: "#f7f3ec"});
+      } catch (err) {
+        error.textContent = err.message ?? "Please try again.";
+        error.hidden = false;
+      } finally {
+        download.disabled = false;
+        download.textContent = originalLabel;
+      }
+    }
+
+    closeButton.addEventListener("click", closeModal);
+    submit.addEventListener("click", handleSubmit);
+    download.addEventListener("click", handleDownload);
+    input.addEventListener("input", () => {
+      error.hidden = true;
+      paint();
+    });
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") handleSubmit();
+    });
+
+    paint();
+    input.focus();
+  }
+
   function openAddModal() {
     closeModal();
     if (!isSupabaseConfigured()) {
       openMessageModal("Not connected", "Planting is not available yet. Please try again later.");
+      return;
+    }
+
+    if (showMode) {
+      openPlantStage();
       return;
     }
 
@@ -576,6 +816,7 @@ export function initUI({
       dbId: entry.id,
       createdAt: entry.createdAt,
     }));
+    if (!landscapeIncludesArchive(landscape)) return community;
     const archive = namesData.map((entry, index) => ({
       key: `archive-${index}`,
       name: entry.name,
@@ -601,7 +842,11 @@ export function initUI({
     if (!q) {
       const hint = document.createElement("p");
       hint.className = "modal-message search-hint";
-      hint.textContent = "Type a name to search community and archive trees.";
+      hint.textContent = landscapeIncludesArchive(landscape)
+        ? canPlant(landscape)
+          ? "Type a name to search community and archive trees."
+          : "Type a name to search archive trees."
+        : "Type a name to search planted trees.";
       container.appendChild(hint);
       return;
     }
@@ -689,18 +934,19 @@ export function initUI({
     });
   }
 
-  plantButton.addEventListener("click", openAddModal);
-  remixButton.addEventListener("click", () => onRegenerateLandscape?.());
+  plantButton?.addEventListener("click", openAddModal);
+  remixButton?.addEventListener("click", () => onRegenerateLandscape?.());
   myTreesButton.addEventListener("click", openMyTreesModal);
   searchButton?.addEventListener("click", openSearchModal);
   updateTreeCounts();
 
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
-    plantButton.disabled = blocked;
-    remixButton.disabled = blocked;
+    if (plantButton) plantButton.disabled = blocked || showingPublic;
+    if (remixButton) remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
     if (searchButton) searchButton.disabled = blocked;
+    fullscreenButton.disabled = blocked;
   }
 
   return {closeModal, setInteractionBlocked, updateTreeCounts};
