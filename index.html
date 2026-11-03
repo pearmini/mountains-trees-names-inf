@@ -292,23 +292,41 @@
       font-family: var(--font-serif);
       font-size: 16px;
       line-height: 1.5;
-      margin: 0 0 12px;
+      margin: 0 0 6px;
       opacity: 0.88;
     }
 
-    .show-mode-interaction {
+    .show-mode-credit {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin: 0;
+      opacity: 0.62;
+      letter-spacing: 0.02em;
+    }
+
+    .show-mode-instruction {
       font-family: var(--font-mono);
       font-size: 13px;
       margin: 0;
       opacity: 0.72;
       letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    body.show-mode .show-mode-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      flex: 0 0 auto;
+      margin: 40px 0 0;
     }
 
     body.show-mode .toolbar {
       position: static;
       transform: none;
       flex: 0 0 auto;
-      margin: 40px 0 0;
+      margin: 0;
       gap: 14px;
       align-items: flex-end;
       flex-wrap: nowrap;
@@ -466,6 +484,7 @@
       display: block;
       width: 80px;
       height: 80px;
+      object-fit: contain;
     }
 
     .show-mode-qr-label {
@@ -500,14 +519,22 @@
         font-size: 15px;
       }
 
-      .show-mode-interaction {
+      .show-mode-credit {
+        font-size: 11px;
+      }
+
+      .show-mode-instruction {
         font-size: 12px;
+      }
+
+      body.show-mode .show-mode-controls {
+        margin-top: 32px;
+        gap: 10px;
       }
 
       body.show-mode .toolbar {
         flex-wrap: wrap;
         justify-content: center;
-        margin-top: 32px;
         gap: 10px;
       }
 
@@ -932,46 +959,23 @@
     }
 
     .modal-overlay-print-qr {
-      z-index: 1100;
+      z-index: 1300;
     }
 
     .modal-group-print-qr {
-      width: min(420px, calc(100vw - 40px));
+      width: min(292px, calc(100vw - 40px));
     }
 
     .modal-body-print-qr {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding-top: 8px;
-    }
-
-    .tree-print-qr-wrap {
-      padding: 16px;
-      border-radius: 12px;
-      border: 1.5px solid var(--ink);
-      background: var(--paper);
-      margin-bottom: 16px;
+      justify-content: center;
+      padding: 12px 18px 18px;
     }
 
     .tree-print-qr-code {
       display: block;
       width: 240px;
       height: 240px;
-    }
-
-    .tree-print-qr-message {
-      padding: 0;
-      margin: 0 0 14px;
-      max-width: 34ch;
-    }
-
-    .tree-print-qr-link {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--ink);
-      opacity: 0.8;
     }
 
     body.show-mode .modal-group:has(.modal-dialog-plant-show) {
@@ -1151,7 +1155,9 @@
       display: none;
     }
 
-    .plant-stage-submit {
+    .plant-stage-actions {
+      display: flex;
+      gap: 10px;
       margin-top: 8px;
     }
 
@@ -1329,7 +1335,7 @@
     <header class="show-mode-header">
       <h1 class="show-mode-title">Finding Trees in Names</h1>
       <p class="show-mode-desc">Planting Personal Data into an Infinite Collective Landscape</p>
-      <p class="show-mode-interaction">Drag to pan · Scroll or pinch to zoom</p>
+      <p class="show-mode-credit">Bairui Su, Chloe Yan, NYU ITP · UIST 2026 Demo</p>
     </header>
     <div id="container"></div>
     <script type="module" src="/src/main.js"></script>

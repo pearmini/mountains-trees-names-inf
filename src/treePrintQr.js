@@ -1,7 +1,7 @@
 import QRCode from "qrcode";
 
 const QR_OPTIONS = {
-  margin: 2,
+  margin: 1,
   width: 240,
   color: {
     dark: "#1a1a1a",
@@ -42,9 +42,6 @@ export function createTreePrintQrModal({name, imageUrl, onClose}) {
   const body = document.createElement("div");
   body.className = "modal-body modal-body-print-qr";
 
-  const qrWrap = document.createElement("div");
-  qrWrap.className = "tree-print-qr-wrap";
-
   const qrImage = document.createElement("img");
   qrImage.className = "tree-print-qr-code";
   qrImage.alt = `QR code to save ${name}`;
@@ -52,20 +49,7 @@ export function createTreePrintQrModal({name, imageUrl, onClose}) {
     qrImage.src = dataUrl;
   });
 
-  const message = document.createElement("p");
-  message.className = "modal-message tree-print-qr-message";
-  message.textContent =
-    "Scan with your phone to open and save your tree image. Show this to the host if you would like a print.";
-
-  const link = document.createElement("a");
-  link.className = "tree-print-qr-link";
-  link.href = imageUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = "Open tree image";
-
-  qrWrap.appendChild(qrImage);
-  body.append(qrWrap, message, link);
+  body.appendChild(qrImage);
   dialog.append(header, body);
   group.appendChild(dialog);
   overlay.appendChild(group);

@@ -279,7 +279,18 @@ export function initUI({
   syncFullscreenButton();
 
   toolbar.append(myTreesButton, ...(searchButton ? [searchButton] : []));
-  document.body.append(fullscreenButton, toolbar);
+
+  if (showMode) {
+    const controls = document.createElement("div");
+    controls.className = "show-mode-controls";
+    const instruction = document.createElement("p");
+    instruction.className = "show-mode-instruction";
+    instruction.textContent = "Drag to pan · Scroll or pinch to zoom";
+    controls.append(instruction, toolbar);
+    document.body.append(fullscreenButton, controls);
+  } else {
+    document.body.append(fullscreenButton, toolbar);
+  }
 
   const totalTreesEl = document.createElement("p");
   totalTreesEl.className = "tree-count";
@@ -329,10 +340,10 @@ export function initUI({
     }
   }
 
-  async function openTreePrintQr(name) {
+  async function openTreePrintQr(name, exportOptions) {
     closePrintQrModal();
 
-    const pngBlob = await renderTreePngBlob(name);
+    const pngBlob = await renderTreePngBlob(name, undefined, exportOptions);
     const imageUrl = await uploadTreePng(pngBlob, name);
 
     printQrModal = createTreePrintQrModal({
@@ -368,12 +379,21 @@ export function initUI({
     const preview = document.createElement("div");
     preview.className = "plant-stage-tree";
 
+    const actions = document.createElement("div");
+    actions.className = "plant-stage-actions";
+
     const submit = document.createElement("button");
     submit.type = "button";
     submit.className = "toolbar-btn toolbar-btn-primary plant-stage-submit";
     submit.textContent = "Plant";
 
-    stage.append(closeButton, input, error, preview, submit);
+    const download = document.createElement("button");
+    download.type = "button";
+    download.className = "toolbar-btn toolbar-btn-secondary plant-stage-submit";
+    download.textContent = "Download / Print";
+
+    actions.append(submit, download);
+    stage.append(closeButton, input, error, preview, actions);
     document.body.appendChild(stage);
 
     const onKeyDown = (event) => {
@@ -426,8 +446,33 @@ export function initUI({
       }
     }
 
+    async function handleDownload() {
+      const validation = validateName(input.value);
+      if (!validation.ok) {
+        error.textContent = validation.error;
+        error.hidden = false;
+        return;
+      }
+
+      error.hidden = true;
+      const originalLabel = download.textContent;
+      download.disabled = true;
+      download.textContent = "Preparing…";
+
+      try {
+        await openTreePrintQr(validation.name, {...previewOptions, paper: "#f7f3ec"});
+      } catch (err) {
+        error.textContent = err.message ?? "Please try again.";
+        error.hidden = false;
+      } finally {
+        download.disabled = false;
+        download.textContent = originalLabel;
+      }
+    }
+
     closeButton.addEventListener("click", closeModal);
     submit.addEventListener("click", handleSubmit);
+    download.addEventListener("click", handleDownload);
     input.addEventListener("input", () => {
       error.hidden = true;
       paint();
