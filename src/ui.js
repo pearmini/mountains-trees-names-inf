@@ -278,7 +278,8 @@ export function initUI({
   document.addEventListener("webkitfullscreenchange", syncFullscreenButton);
   syncFullscreenButton();
 
-  toolbar.append(myTreesButton, ...(searchButton ? [searchButton] : []));
+  if (!showMode) toolbar.append(myTreesButton);
+  if (searchButton) toolbar.append(searchButton);
 
   if (showMode) {
     const controls = document.createElement("div");
