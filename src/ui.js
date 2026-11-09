@@ -238,8 +238,8 @@ export function initUI({
   for (const [value, label] of [
     ["all", "All"],
     ["community", "Community"],
-    ["itp", "ITP"],
-    ["uist", "UIST"],
+    ["itp25", "ITP 2025"],
+    ["uist26", "UIST 2026"],
   ]) {
     const option = document.createElement("option");
     option.value = value;
@@ -324,7 +324,7 @@ export function initUI({
   function updateTreeCounts() {
     myTreesButton.textContent = myTreesLabel();
     const total = totalTreeCount();
-    if (currentLandscape === "uist" && total === 0) {
+    if (currentLandscape === "uist26" && total === 0) {
       totalTreesEl.textContent = "This landscape is empty.";
       return;
     }

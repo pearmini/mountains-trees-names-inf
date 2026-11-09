@@ -114,14 +114,14 @@ Append `?show=true` for fullscreen kiosk mode (hides footer links, adds a fullsc
 
 `landscape` chooses which trees sit on the ridge. The toolbar select writes the same param. A missing or unknown value is `all`.
 
-- `?landscape=all` — community trees, the ITP archive, and the UIST forest. New plants join the community list.
+- `?landscape=all` — community trees, the ITP 2025 archive, and the UIST 2026 forest. New plants join the community list.
 - `?landscape=community` — community trees only. New plants join that same list.
-- `?landscape=itp` — the ITP archive only. Plant is grayed out.
-- `?landscape=uist` — the UIST forest planted at the booth. Plant is grayed out.
+- `?landscape=itp25` — the ITP 2025 archive only. Plant is grayed out.
+- `?landscape=uist26` — the UIST 2026 forest planted at the booth. Plant is grayed out.
 
 UIST booth, with the mountain seed pinned so every screen shares one terrain:
 
-`/?landscape=uist&show=true&seed=20261103`
+`/?landscape=uist26&show=true&seed=20261103`
 
 The Visit QR copies that URL, so a phone joins the same mountains and the same forest.
 
@@ -149,7 +149,7 @@ infinite-landscape/
 │   ├── main.js     # Mount, resize, kiosk mode
 │   └── lib/
 │       ├── browserId.js        # Shared visitor ID with Name2Tree
-│       ├── landscapeMode.js    # all / community / itp / uist
+│       ├── landscapeMode.js    # all / community / itp25 / uist26
 │       ├── supabase.js         # Client + browser ID header
 │       ├── validateName.js     # Profanity and input checks
 │       └── landscapeTreesApi.js

@@ -138,7 +138,7 @@ async function bootstrap() {
     onRegenerateLandscape: regenerateLandscape,
     onLandscapeChange: (next) => applyLandscape(next, {updateHistory: true}),
     onAdd: async (name) => {
-      if (landscape === "itp" || landscape === "uist") return;
+      if (landscape === "itp25" || landscape === "uist26") return;
       const added = await addLandscapeTree(name, landscape);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
