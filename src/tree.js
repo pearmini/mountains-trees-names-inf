@@ -30,6 +30,58 @@ function ellipsis(text, maxLength) {
   return chars.slice(0, maxLength).join("") + "...";
 }
 
+const HAN_RE = /\p{Script=Han}/u;
+const SEAL_FONT = '"Songti SC", "STSong", "Noto Serif SC", serif';
+
+function hasHan(text) {
+  return HAN_RE.test(text);
+}
+
+function sealCharacters(text, maxLength) {
+  const chars = Array.from(text);
+  if (chars.length <= maxLength) return chars;
+  return chars.slice(0, maxLength).concat("…");
+}
+
+function chineseSeal(text, {width, height}) {
+  const chars = sealCharacters(text, 8);
+  const fontSize = (16 / 480) * width;
+  const padX = fontSize * 0.4;
+  const padY = fontSize * 0.32;
+  const boxW = chars.length * fontSize + padX * 2;
+  const boxH = fontSize + padY * 2;
+  const x = width - (20 / 480) * width - boxW;
+  const y = height - (55 / 480) * width - boxH;
+  const strokeWidth = (1.5 / 480) * width;
+
+  return cm.svg("g", {
+    "data-tree-part": "name",
+    children: [
+      cm.svg("rect", {
+        x,
+        y,
+        width: boxW,
+        height: boxH,
+        fill: "none",
+        stroke: "red",
+        strokeWidth,
+      }),
+      chars.map((ch, i) =>
+        cm.svg("text", {
+          textContent: ch,
+          x: x + padX + fontSize * (i + 0.5),
+          y: y + boxH / 2,
+          textAnchor: "middle",
+          dominantBaseline: "central",
+          fill: "red",
+          fontSize,
+          fontFamily: SEAL_FONT,
+        }),
+      ),
+    ],
+  });
+}
+
 function circlePath(r) {
   const path = d3.path();
   path.arc(0, 0, r, 0, Math.PI * 2);
@@ -244,69 +296,73 @@ export function tree(
   let textNode = null;
   let longMessage = false;
 
-  try {
-    const wordLength = text.split(" ").length;
-    if (wordLength > 4) {
-      throw new Error("Too many words");
-    }
+  if (hasHan(text)) {
+    textNode = chineseSeal(text, {width, height});
+  } else {
+    try {
+      const wordLength = text.split(" ").length;
+      if (wordLength > 4) {
+        throw new Error("Too many words");
+      }
 
-    let cellSize = stampCellSize;
-    const padding = 20;
-    let totalLength = wordLength * cellSize + padding * 2;
-    if (totalLength > width / 2) {
-      cellSize = (width / 2 - padding * 2) / wordLength;
-      totalLength = wordLength * cellSize + padding;
-    } else {
-      totalLength -= padding;
-    }
+      let cellSize = stampCellSize;
+      const padding = 20;
+      let totalLength = wordLength * cellSize + padding * 2;
+      if (totalLength > width / 2) {
+        cellSize = (width / 2 - padding * 2) / wordLength;
+        totalLength = wordLength * cellSize + padding;
+      } else {
+        totalLength -= padding;
+      }
 
-    const start = end ? width - totalLength : width / 2 + padding;
-    const sw = 1.5;
-    textNode = cm.svg("g", {
-      "data-tree-part": "name",
-      transform: `translate(${start}, ${baselineY - cellSize - 5})`,
-      children: [
-        apack.text(text, {
-          cellSize,
-          word: {strokeWidth: sw, stroke: "red"},
-          background: {strokeWidth: sw * 2, stroke: "red"},
-        }),
-      ],
-    });
-  } catch (e) {
-    longMessage = true;
-    const fontSize = 12;
-    const textPadding = 4;
-    const textContent = ellipsis(text, 14);
-    const textWidth = textContent.length * (fontSize * 0.6);
-    const textHeight = fontSize;
-    const dx = (-20 / 480) * width;
-    const dy = (-55 / 480) * width;
-    textNode = cm.svg("g", {
-      "data-tree-part": "name",
-      children: [
-        cm.svg("rect", {
-          x: width + dx - textWidth - textPadding,
-          y: height + dy - textHeight - textPadding,
-          width: textWidth + textPadding * 2,
-          height: textHeight + textPadding * 2,
-          fill: "none",
-          stroke: "red",
-          strokeWidth: 1.5,
-        }),
-        cm.svg("text", {
-          textContent: textContent,
-          x: "100%",
-          y: "100%",
-          dx: dx,
-          dy: dy,
-          textAnchor: "end",
-          fill: "red",
-          fontSize: fontSize,
-          fontFamily: "monospace",
-        }),
-      ],
-    });
+      const start = end ? width - totalLength : width / 2 + padding;
+      const sw = 1.5;
+      textNode = cm.svg("g", {
+        "data-tree-part": "name",
+        transform: `translate(${start}, ${baselineY - cellSize - 5})`,
+        children: [
+          apack.text(text, {
+            cellSize,
+            word: {strokeWidth: sw, stroke: "red"},
+            background: {strokeWidth: sw * 2, stroke: "red"},
+          }),
+        ],
+      });
+    } catch (e) {
+      longMessage = true;
+      const fontSize = 12;
+      const textPadding = 4;
+      const textContent = ellipsis(text, 14);
+      const textWidth = textContent.length * (fontSize * 0.6);
+      const textHeight = fontSize;
+      const dx = (-20 / 480) * width;
+      const dy = (-55 / 480) * width;
+      textNode = cm.svg("g", {
+        "data-tree-part": "name",
+        children: [
+          cm.svg("rect", {
+            x: width + dx - textWidth - textPadding,
+            y: height + dy - textHeight - textPadding,
+            width: textWidth + textPadding * 2,
+            height: textHeight + textPadding * 2,
+            fill: "none",
+            stroke: "red",
+            strokeWidth: 1.5,
+          }),
+          cm.svg("text", {
+            textContent: textContent,
+            x: "100%",
+            y: "100%",
+            dx: dx,
+            dy: dy,
+            textAnchor: "end",
+            fill: "red",
+            fontSize: fontSize,
+            fontFamily: "monospace",
+          }),
+        ],
+      });
+    }
   }
 
   const svg = cm.svg("svg", {
