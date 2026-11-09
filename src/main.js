@@ -2,6 +2,7 @@ import {rankIndexForDbId, render} from "./render.js";
 import {prepareTreeForGrow, animateTreeGrow} from "./animateTree.js";
 import {initShowModeQr} from "./showModeQr.js";
 import {initUI} from "./ui.js";
+import {landscapeIncludesArchive, parseLandscape} from "./lib/landscapeMode.js";
 import {
   addLandscapeTree,
   deleteLandscapeTree,
@@ -11,6 +12,8 @@ import {inject} from "@vercel/analytics";
 
 const urlParams = new URLSearchParams(window.location.search);
 const showMode = urlParams.get("show") === "true";
+let landscape = parseLandscape(urlParams.get("landscape"));
+let includeArchive = landscapeIncludesArchive(landscape);
 
 if (showMode) {
   document.body.classList.add("show-mode");
@@ -38,6 +41,7 @@ let currentController = null;
 let userTrees = [];
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
+let syncLandscapeControl = () => {};
 let currentSeed = parseSeedFromUrl();
 let centerRankIndex = 0;
 if (currentSeed == null) {
@@ -59,17 +63,36 @@ function focusRank(rankIndex) {
 }
 
 function focusTree(dbId) {
-  focusRank(rankIndexForDbId(userTrees, dbId));
+  focusRank(rankIndexForDbId(userTrees, dbId, {includeArchive}));
 }
 
 async function loadUserTrees() {
   try {
-    userTrees = await fetchLandscapeTrees();
+    userTrees = await fetchLandscapeTrees(landscape);
   } catch (error) {
     console.error("Failed to load community trees:", error);
     userTrees = [];
   }
   return userTrees;
+}
+
+async function applyLandscape(next, {updateHistory = false} = {}) {
+  const parsed = parseLandscape(next);
+  if (parsed === landscape) return;
+  const trees = await fetchLandscapeTrees(parsed);
+  landscape = parsed;
+  includeArchive = landscapeIncludesArchive(landscape);
+  userTrees = trees;
+  centerRankIndex = 0;
+  if (updateHistory) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("landscape", landscape);
+    const query = params.toString();
+    history.pushState(null, "", query ? `?${query}` : window.location.pathname);
+  }
+  createAndRender({panToOrigin: true});
+  syncLandscapeControl(landscape);
+  updateTreeCounts();
 }
 
 function createAndRender({panToOrigin = false} = {}) {
@@ -83,6 +106,7 @@ function createAndRender({panToOrigin = false} = {}) {
     seed: currentSeed,
     userTrees,
     centerRankIndex,
+    includeArchive,
   });
 
   container.appendChild(currentController.node);
@@ -105,14 +129,17 @@ async function bootstrap() {
   await loadUserTrees();
   createAndRender();
 
-  ({setInteractionBlocked, updateTreeCounts} = initUI({
+  ({setInteractionBlocked, updateTreeCounts, syncLandscapeControl} = initUI({
     showMode,
+    landscape,
     getUserTrees: () => userTrees,
     getCommunityTreeCount: () => userTrees.length,
     refreshUserTrees,
     onRegenerateLandscape: regenerateLandscape,
+    onLandscapeChange: (next) => applyLandscape(next, {updateHistory: true}),
     onAdd: async (name) => {
-      const added = await addLandscapeTree(name);
+      if (landscape === "itp25" || landscape === "uist26") return;
+      const added = await addLandscapeTree(name, landscape);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
       focusTree(added.id);
@@ -122,8 +149,8 @@ async function bootstrap() {
         animateTreeGrow(groupEl);
       }
     },
-    onDelete: async (id) => {
-      await deleteLandscapeTree(id);
+    onDelete: async (id, storedLandscapeId) => {
+      await deleteLandscapeTree(id, landscape, storedLandscapeId);
       userTrees = userTrees.filter((tree) => tree.id !== id);
       updateTreeCounts();
       if (currentController) {
@@ -140,6 +167,13 @@ async function bootstrap() {
 }
 
 bootstrap();
+
+window.addEventListener("popstate", () => {
+  const next = parseLandscape(new URLSearchParams(window.location.search).get("landscape"));
+  applyLandscape(next).catch((error) => {
+    console.error("Failed to switch landscape:", error);
+  });
+});
 
 if (showMode) {
   const contentDiv = document.querySelector(".content");

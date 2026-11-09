@@ -4,10 +4,14 @@ create table public.landscape_trees (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(trim(name)) between 1 and 80),
   browser_id text not null check (char_length(browser_id) >= 8),
+  landscape_id text not null default 'main' check (landscape_id in ('main', 'uist')),
   created_at timestamptz not null default now()
 );
 
 create index landscape_trees_created_at_idx on public.landscape_trees (created_at desc);
+
+create index landscape_trees_landscape_created_idx
+  on public.landscape_trees (landscape_id, created_at desc);
 
 alter table public.landscape_trees enable row level security;
 

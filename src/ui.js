@@ -2,6 +2,7 @@ import {tree} from "./tree.js";
 import namesData from "./names.json";
 import {createHowItWorksPanel} from "./howItWorks.js";
 import {getBrowserId} from "./lib/browserId.js";
+import {landscapeIncludesArchive} from "./lib/landscapeMode.js";
 import {isSupabaseConfigured} from "./lib/landscapeTreesApi.js";
 import {downloadTreePng, downloadTreeSvg, renderTreePngBlob} from "./lib/treeImageExport.js";
 import {uploadTreePng} from "./lib/treeImageUpload.js";
@@ -185,17 +186,25 @@ function createTreeActions({onFocus, onDelete}) {
 
 export function initUI({
   showMode = false,
+  landscape = "all",
   onAdd,
   onDelete,
   onFocusTree,
   onFocusRank,
   onRegenerateLandscape,
+  onLandscapeChange,
   getUserTrees,
   getCommunityTreeCount,
   refreshUserTrees,
 }) {
   const toolbar = document.createElement("div");
   toolbar.className = "toolbar";
+
+  let currentLandscape = landscape;
+
+  function plantingOpen(mode = currentLandscape) {
+    return mode === "all" || mode === "community";
+  }
 
   const plantWrap = document.createElement("div");
   plantWrap.className = "toolbar-plant-wrap";
@@ -205,14 +214,54 @@ export function initUI({
   plantButton.className = "toolbar-btn toolbar-btn-primary";
   plantButton.textContent = "+ Plant";
 
+  let plantHint = null;
   if (showMode) {
-    const plantHint = document.createElement("p");
+    plantHint = document.createElement("p");
     plantHint.className = "toolbar-show-hint";
     plantHint.textContent = "Tap to plant your name as a tree";
     plantWrap.append(plantHint, plantButton);
   } else {
     plantWrap.appendChild(plantButton);
   }
+
+  toolbar.appendChild(plantWrap);
+
+  function paintPlant(mode = currentLandscape) {
+    const open = plantingOpen(mode);
+    plantButton.disabled = !open || document.body.classList.contains("interaction-blocked");
+    if (plantHint) plantHint.hidden = !open;
+  }
+
+  const landscapeSelect = document.createElement("select");
+  landscapeSelect.className = "toolbar-select";
+  landscapeSelect.setAttribute("aria-label", "Trees");
+  for (const [value, label] of [
+    ["all", "All"],
+    ["community", "Community"],
+    ["itp25", "ITP 2025"],
+    ["uist26", "UIST 2026"],
+  ]) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    option.selected = value === landscape;
+    landscapeSelect.appendChild(option);
+  }
+  landscapeSelect.addEventListener("change", async () => {
+    const next = landscapeSelect.value;
+    if (next === currentLandscape) return;
+    landscapeSelect.disabled = true;
+    try {
+      await onLandscapeChange?.(next);
+    } catch (error) {
+      console.error("Failed to switch landscape:", error);
+      landscapeSelect.value = currentLandscape;
+    } finally {
+      landscapeSelect.disabled = document.body.classList.contains("interaction-blocked");
+    }
+  });
+  toolbar.appendChild(landscapeSelect);
+  paintPlant();
 
   const remixWrap = document.createElement("div");
   remixWrap.className = "toolbar-item-with-tooltip toolbar-remix-wrap";
@@ -250,7 +299,7 @@ export function initUI({
     searchButton.textContent = "Search";
   }
 
-  toolbar.append(plantWrap, remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
+  toolbar.append(remixWrap, myTreesButton, ...(searchButton ? [searchButton] : []));
   document.body.appendChild(toolbar);
 
   const totalTreesEl = document.createElement("p");
@@ -267,12 +316,20 @@ export function initUI({
   }
 
   function totalTreeCount() {
-    return getCommunityTreeCount() + namesData.length;
+    const planted = getCommunityTreeCount();
+    const archive = landscapeIncludesArchive(currentLandscape) ? namesData.length : 0;
+    return planted + archive;
   }
 
   function updateTreeCounts() {
     myTreesButton.textContent = myTreesLabel();
-    totalTreesEl.textContent = `${totalTreeCount().toLocaleString()} trees in the landscape`;
+    const total = totalTreeCount();
+    if (currentLandscape === "uist26" && total === 0) {
+      totalTreesEl.textContent = "This landscape is empty.";
+      return;
+    }
+    const noun = total === 1 ? "tree" : "trees";
+    totalTreesEl.textContent = `${total.toLocaleString()} ${noun} in the landscape`;
   }
 
   let activeModal = null;
@@ -551,7 +608,7 @@ export function initUI({
           onDelete: async () => {
             if (!confirm(`Remove "${entry.name}" from the landscape?`)) return;
             try {
-              await onDelete(entry.id);
+              await onDelete(entry.id, entry.landscapeId);
               await refreshUserTrees();
               closeModal();
               openMyTreesModal();
@@ -576,6 +633,7 @@ export function initUI({
       dbId: entry.id,
       createdAt: entry.createdAt,
     }));
+    if (!landscapeIncludesArchive(currentLandscape)) return community;
     const archive = namesData.map((entry, index) => ({
       key: `archive-${index}`,
       name: entry.name,
@@ -601,7 +659,11 @@ export function initUI({
     if (!q) {
       const hint = document.createElement("p");
       hint.className = "modal-message search-hint";
-      hint.textContent = "Type a name to search community and archive trees.";
+      hint.textContent = landscapeIncludesArchive(currentLandscape)
+        ? plantingOpen()
+          ? "Type a name to search community and archive trees."
+          : "Type a name to search archive trees."
+        : "Type a name to search planted trees.";
       container.appendChild(hint);
       return;
     }
@@ -689,7 +751,7 @@ export function initUI({
     });
   }
 
-  plantButton.addEventListener("click", openAddModal);
+  plantButton?.addEventListener("click", openAddModal);
   remixButton.addEventListener("click", () => onRegenerateLandscape?.());
   myTreesButton.addEventListener("click", openMyTreesModal);
   searchButton?.addEventListener("click", openSearchModal);
@@ -697,11 +759,18 @@ export function initUI({
 
   function setInteractionBlocked(blocked) {
     document.body.classList.toggle("interaction-blocked", blocked);
-    plantButton.disabled = blocked;
+    plantButton.disabled = blocked || !plantingOpen();
     remixButton.disabled = blocked;
     myTreesButton.disabled = blocked;
     if (searchButton) searchButton.disabled = blocked;
+    landscapeSelect.disabled = blocked;
   }
 
-  return {closeModal, setInteractionBlocked, updateTreeCounts};
+  function syncLandscapeControl(mode) {
+    currentLandscape = mode;
+    landscapeSelect.value = mode;
+    paintPlant(mode);
+  }
+
+  return {closeModal, setInteractionBlocked, updateTreeCounts, syncLandscapeControl};
 }

@@ -175,6 +175,10 @@
       cursor: wait;
     }
 
+    .toolbar-plant-wrap .toolbar-btn:disabled {
+      cursor: not-allowed;
+    }
+
     body.interaction-blocked .github-link {
       pointer-events: none;
       opacity: 0.55;
@@ -203,6 +207,29 @@
 
     .toolbar-btn-secondary:hover:not(:disabled) {
       background: var(--panel);
+    }
+
+    .toolbar-select {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 28px 8px 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--ink);
+      background: rgba(254, 250, 241, 0.92);
+      color: var(--ink);
+      cursor: pointer;
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+        linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+      background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .toolbar-select:disabled {
+      opacity: 0.6;
+      cursor: wait;
     }
 
     .toolbar-plant-wrap {
@@ -355,6 +382,12 @@
       position: relative;
     }
 
+    body.show-mode .toolbar-select {
+      font-size: 18px;
+      padding: 14px 36px 14px 28px;
+      background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+    }
+
     body.show-mode .toolbar-btn {
       font-size: 18px;
       padding: 14px 28px;
@@ -376,7 +409,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
     }
 
-    body.show-mode .toolbar-btn-primary {
+    body.show-mode .toolbar-btn-primary:not(:disabled) {
       animation: show-mode-plant-pulse 2.4s ease-in-out infinite;
     }
 
@@ -495,6 +528,11 @@
       body.show-mode .toolbar-btn {
         font-size: 16px;
         padding: 12px 22px;
+      }
+
+      body.show-mode .toolbar-select {
+        font-size: 16px;
+        padding: 12px 32px 12px 22px;
       }
 
       body.show-mode .show-mode-qr-panel {
