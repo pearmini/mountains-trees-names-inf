@@ -19,5 +19,5 @@ export function storageLandscapeId(landscape) {
 }
 
 export function canPlant(landscape) {
-  return storageLandscapeId(landscape) != null;
+  return landscape === "all" || landscape === "community";
 }

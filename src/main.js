@@ -22,8 +22,8 @@ if (showMode) {
 
 inject();
 
-function parseSeedFromUrl() {
-  const seedParam = urlParams.get("seed");
+function parseSeedFromUrl(params = urlParams) {
+  const seedParam = params.get("seed");
   if (seedParam != null && seedParam !== "" && Number.isFinite(Number(seedParam))) {
     return Number(seedParam) >>> 0;
   }
@@ -42,6 +42,7 @@ let userTrees = [];
 let setInteractionBlocked = () => {};
 let updateTreeCounts = () => {};
 let syncLandscapeControl = () => {};
+let landscapeRequest = 0;
 let currentSeed = parseSeedFromUrl();
 let centerRankIndex = 0;
 if (currentSeed == null) {
@@ -67,23 +68,36 @@ function focusTree(dbId) {
 }
 
 async function loadUserTrees() {
+  const mode = landscape;
   try {
-    userTrees = await fetchLandscapeTrees(landscape);
+    const trees = await fetchLandscapeTrees(mode);
+    if (mode === landscape) userTrees = trees;
   } catch (error) {
     console.error("Failed to load community trees:", error);
-    userTrees = [];
+    if (mode === landscape) userTrees = [];
   }
   return userTrees;
 }
 
-async function applyLandscape(next, {updateHistory = false} = {}) {
+async function applyLandscape(next, {updateHistory = false, seed = undefined} = {}) {
   const parsed = parseLandscape(next);
-  if (parsed === landscape) return;
-  const trees = await fetchLandscapeTrees(parsed);
-  landscape = parsed;
-  includeArchive = landscapeIncludesArchive(landscape);
-  userTrees = trees;
-  centerRankIndex = 0;
+  const seedChanged = seed != null && seed !== currentSeed;
+  const request = ++landscapeRequest;
+  if (parsed === landscape && !seedChanged) {
+    syncLandscapeControl(landscape);
+    return;
+  }
+
+  const trees = parsed === landscape ? userTrees : await fetchLandscapeTrees(parsed);
+  if (request !== landscapeRequest) return;
+
+  if (seedChanged) currentSeed = seed;
+  if (parsed !== landscape) {
+    landscape = parsed;
+    includeArchive = landscapeIncludesArchive(landscape);
+    userTrees = trees;
+    centerRankIndex = 0;
+  }
   if (updateHistory) {
     const params = new URLSearchParams(window.location.search);
     params.set("landscape", landscape);
@@ -117,7 +131,9 @@ function createAndRender({panToOrigin = false} = {}) {
 }
 
 async function refreshUserTrees() {
+  const mode = landscape;
   await loadUserTrees();
+  if (mode !== landscape) return userTrees;
   if (currentController) {
     currentController.setUserTrees(userTrees);
   }
@@ -126,8 +142,9 @@ async function refreshUserTrees() {
 }
 
 async function bootstrap() {
+  const request = ++landscapeRequest;
   await loadUserTrees();
-  createAndRender();
+  if (request === landscapeRequest) createAndRender();
 
   ({setInteractionBlocked, updateTreeCounts, syncLandscapeControl} = initUI({
     showMode,
@@ -138,7 +155,9 @@ async function bootstrap() {
     onRegenerateLandscape: regenerateLandscape,
     onLandscapeChange: (next) => applyLandscape(next, {updateHistory: true}),
     onAdd: async (name) => {
-      if (landscape === "itp25" || landscape === "uist26") return;
+      if (landscape === "itp25" || landscape === "uist26") {
+        throw new Error("This landscape does not accept new trees.");
+      }
       const added = await addLandscapeTree(name, landscape);
       userTrees = [added, ...userTrees.filter((tree) => tree.id !== added.id)];
       updateTreeCounts();
@@ -169,9 +188,15 @@ async function bootstrap() {
 bootstrap();
 
 window.addEventListener("popstate", () => {
-  const next = parseLandscape(new URLSearchParams(window.location.search).get("landscape"));
-  applyLandscape(next).catch((error) => {
+  const params = new URLSearchParams(window.location.search);
+  applyLandscape(params.get("landscape"), {seed: parseSeedFromUrl(params)}).catch((error) => {
     console.error("Failed to switch landscape:", error);
+    const restore = new URLSearchParams(window.location.search);
+    restore.set("landscape", landscape);
+    restore.set("seed", String(currentSeed));
+    const query = restore.toString();
+    history.replaceState(null, "", query ? `?${query}` : window.location.pathname);
+    syncLandscapeControl(landscape);
   });
 });
 
