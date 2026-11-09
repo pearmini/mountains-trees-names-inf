@@ -112,12 +112,12 @@ pnpm preview   # preview production build
 
 Append `?show=true` for fullscreen kiosk mode (hides footer links, adds a fullscreen button).
 
-`landscape` chooses which trees sit on the ridge. A missing or unknown value is `all`, so the public site stays the current forest.
+`landscape` chooses which trees sit on the ridge. The toolbar select writes the same param. A missing or unknown value is `all`.
 
-- `?landscape=all` — community trees plus the ITP archive. New plants join the community list.
+- `?landscape=all` — community trees, the ITP archive, and the UIST forest. New plants join the community list.
 - `?landscape=community` — community trees only. New plants join that same list.
-- `?landscape=itp` — the ITP archive only. Plant is hidden.
-- `?landscape=uist` — a separate forest that starts empty. New plants stay on this URL.
+- `?landscape=itp` — the ITP archive only. Plant is grayed out.
+- `?landscape=uist` — the UIST forest planted at the booth. Plant is grayed out.
 
 UIST booth, with the mountain seed pinned so every screen shares one terrain:
 
